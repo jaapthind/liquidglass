@@ -3,38 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ultimate 3D Liquid Glass Engine</title>
+    <title>High-Fidelity Liquid Glass Refraction</title>
     <style>
-        /* ==========================================================================
-           ADVANCED CSS HUD & UI ENVIRONMENT (200+ LINES TARGET)
-           ========================================================================== */
         :root {
-            --surface-color: #050507;
-            --primary-accent: #00e5ff;
-            --secondary-accent: #ff00ea;
-            --text-main: #ffffff;
-            --text-muted: rgba(255, 255, 255, 0.5);
-            --panel-bg: rgba(10, 10, 15, 0.85);
-            --border-glow: rgba(0, 229, 255, 0.3);
-            --font-stack: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --bg-dark: #121212;
         }
-
+        
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
             user-select: none;
             -webkit-user-drag: none;
         }
 
-        html, body {
+        body, html {
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            background-color: var(--surface-color);
-            font-family: var(--font-stack);
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            background-color: var(--bg-dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         #webgl-canvas {
@@ -44,821 +32,304 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            outline: none;
+            display: block;
+            cursor: none; /* Hide default cursor for immersion */
         }
 
-        /* --------------------------------------------------------------------------
-           LOADING SEQUENCE OVERLAY
-           -------------------------------------------------------------------------- */
-        #loader-wrapper {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: radial-gradient(circle at center, #111116 0%, #020203 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 1.2s;
-            backdrop-filter: blur(10px);
-        }
-
-        .loader-core {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            margin-bottom: 40px;
-            transform-style: preserve-3d;
-            animation: core-rotate 4s infinite linear;
-        }
-
-        .loader-ring {
+        #ui-layer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 1px solid transparent;
-            border-radius: 50%;
-        }
-
-        .loader-ring:nth-child(1) {
-            border-top-color: var(--primary-accent);
-            border-left-color: var(--primary-accent);
-            animation: ring-spin 2s infinite cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        .loader-ring:nth-child(2) {
-            border-bottom-color: var(--secondary-accent);
-            border-right-color: var(--secondary-accent);
-            transform: scale(0.8) rotate(45deg);
-            animation: ring-spin-reverse 2.5s infinite cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        .loader-ring:nth-child(3) {
-            border-top-color: #fff;
-            transform: scale(0.6) rotate(90deg);
-            animation: ring-spin 1.5s infinite linear;
-        }
-
-        #loader-status {
-            color: var(--text-main);
-            font-size: 11px;
-            letter-spacing: 6px;
-            text-transform: uppercase;
-            font-weight: 600;
-            opacity: 0.8;
-            text-shadow: 0 0 20px var(--border-glow);
-            animation: pulse-text 2s infinite alternate;
-        }
-
-        .progress-bar-container {
-            width: 200px;
-            height: 2px;
-            background: rgba(255,255,255,0.1);
-            margin-top: 20px;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        #progress-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent));
-            box-shadow: 0 0 10px var(--primary-accent);
-            transition: width 0.1s linear;
-        }
-
-        /* --------------------------------------------------------------------------
-           HUD & DIAGNOSTICS OVERLAY
-           -------------------------------------------------------------------------- */
-        #hud-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 50;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .hud-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .branding h1 {
-            font-size: 28px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 4px;
-        }
-
-        .branding p {
-            font-size: 10px;
-            font-family: monospace;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
             letter-spacing: 2px;
-            color: var(--primary-accent);
+            pointer-events: none;
         }
-
-        .diagnostics {
-            text-align: right;
-            font-family: monospace;
-            font-size: 11px;
-            color: var(--text-muted);
-            line-height: 1.6;
-        }
-
-        .diag-value {
-            color: var(--text-main);
-            margin-left: 10px;
-            font-weight: bold;
-        }
-
-        .hud-footer {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 40px;
-        }
-
-        .footer-stat {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .stat-label {
-            font-size: 9px;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        .stat-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-main);
-            margin-top: 4px;
-        }
-
-        /* --------------------------------------------------------------------------
-           CUSTOM DAT.GUI OVERRIDES (FOR THE SLIDERS)
-           -------------------------------------------------------------------------- */
-        .dg.ac {
-            z-index: 100 !important;
-            top: 30px !important;
-            right: 30px !important;
-        }
-        
-        .dg.main {
-            background-color: var(--panel-bg) !important;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.02) inset;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .dg .cr.function:hover, .dg .cr.boolean:hover {
-            background: rgba(255,255,255,0.05) !important;
-        }
-
-        .dg .c .slider {
-            background: rgba(0,0,0,0.5) !important;
-            border-radius: 4px;
-        }
-
-        .dg .c .slider:hover {
-            background: rgba(0,0,0,0.8) !important;
-        }
-
-        .dg .c .slider-fg {
-            background: linear-gradient(90deg, var(--primary-accent), #00ffcc) !important;
-            border-radius: 4px;
-            box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
-        }
-
-        .dg .property-name {
-            font-family: var(--font-stack) !important;
-            font-size: 11px !important;
-            font-weight: 500 !important;
-            color: #ccc !important;
-            letter-spacing: 0.5px;
-        }
-
-        .dg .c input[type=text] {
-            background: rgba(0,0,0,0.3) !important;
-            color: var(--primary-accent) !important;
-            font-family: monospace !important;
-            border-radius: 4px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .dg .c input[type=text]:hover {
-            border-color: var(--primary-accent);
-        }
-
-        .dg li.title {
-            background: rgba(255,255,255,0.02) !important;
-            border-bottom: 1px solid rgba(255,255,255,0.05) !important;
-            font-weight: 700 !important;
-            letter-spacing: 1px !important;
-            color: #fff !important;
-            text-transform: uppercase;
-            font-size: 10px !important;
-            padding-left: 15px !important;
-        }
-
-        /* --------------------------------------------------------------------------
-           KEYFRAME ANIMATIONS
-           -------------------------------------------------------------------------- */
-        @keyframes core-rotate {
-            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-            100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
-        }
-
-        @keyframes ring-spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @keyframes ring-spin-reverse {
-            0% { transform: scale(0.8) rotate(360deg); }
-            100% { transform: scale(0.8) rotate(0deg); }
-        }
-
-        @keyframes pulse-text {
-            0% { opacity: 0.4; filter: blur(1px); }
-            100% { opacity: 1; filter: blur(0px); text-shadow: 0 0 15px var(--primary-accent); }
-        }
-
     </style>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 </head>
 <body>
 
-    <div id="loader-wrapper">
-        <div class="loader-core">
-            <div class="loader-ring"></div>
-            <div class="loader-ring"></div>
-            <div class="loader-ring"></div>
-        </div>
-        <div id="loader-status">COMPILING GLSL SHADERS...</div>
-        <div class="progress-bar-container">
-            <div id="progress-fill"></div>
-        </div>
-    </div>
-
-    <div id="hud-container">
-        <div class="hud-header">
-            <div class="branding">
-                <h1>LIQUID GLASS OS</h1>
-                <p>NEURAL REFRACTION ENGINE v3.0</p>
-            </div>
-            <div class="diagnostics">
-                <div>FPS <span class="diag-value" id="fps-counter">60</span></div>
-                <div>RENDER TARGET <span class="diag-value">16-BIT HDR</span></div>
-                <div>DISPERSION <span class="diag-value">ACTIVE</span></div>
-                <div>POLYGONS <span class="diag-value">262,144</span></div>
-            </div>
-        </div>
-        <div class="hud-footer">
-            <div class="footer-stat">
-                <span class="stat-label">IOR</span>
-                <span class="stat-value" id="stat-ior">1.50</span>
-            </div>
-            <div class="footer-stat">
-                <span class="stat-label">Chrom. Ab.</span>
-                <span class="stat-value" id="stat-dispersion">0.08</span>
-            </div>
-            <div class="footer-stat">
-                <span class="stat-label">Viscosity</span>
-                <span class="stat-value" id="stat-viscosity">0.40</span>
-            </div>
-        </div>
-    </div>
-
+    <div id="ui-layer">OPTICAL REFRACTION ENGINE</div>
     <canvas id="webgl-canvas"></canvas>
 
     <script>
-        // ==========================================================================
-        // SYSTEM ARCHITECTURE & INITIALIZATION
-        // ==========================================================================
         const canvas = document.getElementById('webgl-canvas');
-        const renderer = new THREE.WebGLRenderer({ 
-            canvas: canvas, 
+        const gl = canvas.getContext('webgl2', { 
             antialias: true, 
-            alpha: false,
-            powerPreference: "high-performance",
-            stencil: false,
-            depth: true
-        });
-        
-        // High-end rendering settings for realism
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
-
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050508);
-        scene.fog = new THREE.FogExp2(0x050508, 0.015);
-
-        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 12);
-
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.04;
-        controls.enablePan = false;
-        controls.minDistance = 5;
-        controls.maxDistance = 25;
-
-        // ==========================================================================
-        // PROCEDURAL ENVIRONMENT GENERATION (REFRACTION TARGETS)
-        // ==========================================================================
-        const envGroup = new THREE.Group();
-        scene.add(envGroup);
-
-        // Advanced Studio Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-        scene.add(ambientLight);
-
-        const mainLight = new THREE.DirectionalLight(0xffffff, 3.0);
-        mainLight.position.set(10, 20, 15);
-        scene.add(mainLight);
-
-        const fillLight = new THREE.DirectionalLight(0x00e5ff, 2.0);
-        fillLight.position.set(-10, 0, -10);
-        scene.add(fillLight);
-
-        const rimLight = new THREE.DirectionalLight(0xff00ea, 2.5);
-        rimLight.position.set(0, -10, -15);
-        scene.add(rimLight);
-
-        // Generate high-contrast geometry for the glass to refract
-        const geoMatDark = new THREE.MeshStandardMaterial({ 
-            color: 0x111111, roughness: 0.1, metalness: 0.9 
-        });
-        const geoMatNeonBlue = new THREE.MeshStandardMaterial({ 
-            color: 0x000000, roughness: 0.2, metalness: 0.8, emissive: 0x00e5ff, emissiveIntensity: 2.0 
-        });
-        const geoMatNeonPink = new THREE.MeshStandardMaterial({ 
-            color: 0x000000, roughness: 0.2, metalness: 0.8, emissive: 0xff00ea, emissiveIntensity: 2.0 
+            alpha: false, 
+            powerPreference: "high-performance" 
         });
 
-        const geometries = [
-            new THREE.TorusGeometry(1, 0.2, 16, 100),
-            new THREE.OctahedronGeometry(1, 0),
-            new THREE.BoxGeometry(1, 1, 1),
-            new THREE.IcosahedronGeometry(1, 1)
+        if (!gl) {
+            console.error("WebGL 2 not supported");
+            document.body.innerHTML = '<div style="color:white; display:flex; justify-content:center; align-items:center; height:100vh;">WebGL 2.0 is required for this engine.</div>';
+        }
+
+        // ============================================================================
+        // VERTEX SHADER - Full Screen Quad
+        // ============================================================================
+        const vsSource = `#version 300 es
+            in vec2 a_position;
+            out vec2 v_uv;
+            void main() {
+                v_uv = a_position * 0.5 + 0.5;
+                v_uv.y = 1.0 - v_uv.y;
+                gl_Position = vec4(a_position, 0.0, 1.0);
+            }
+        `;
+
+        // ============================================================================
+        // FRAGMENT SHADER - High-Fidelity SDF Lens & Optical Physics
+        // ============================================================================
+        const fsSource = `#version 300 es
+            precision highp float;
+
+            in vec2 v_uv;
+            out vec4 outColor;
+
+            uniform vec2 u_resolution;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+            uniform vec2 u_velocity;
+
+            // Accurate color matching to the video reference
+            const vec3 COLOR_TOP = vec3(0.86, 0.89, 0.93);
+            const vec3 COLOR_BOTTOM = vec3(0.20, 0.22, 0.25);
+
+            // Exact SDF (Signed Distance Field) for a precise rounded pill/capsule
+            float sdCapsule(vec2 p, vec2 a, vec2 b, float r) {
+                vec2 pa = p - a, ba = b - a;
+                float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+                return length(pa - ba * h) - r;
+            }
+
+            // Shape parameters mathematically scaled to resolution aspect ratio
+            float getGlassShape(vec2 uv, vec2 mousePos, float aspect, out vec2 normal2D) {
+                vec2 p = uv;
+                p.x *= aspect;
+                vec2 m = mousePos;
+                m.x *= aspect;
+
+                // Pill dimensions
+                float width = 0.22;
+                float radius = 0.12;
+                
+                // Add slight dynamic deformation based on velocity (liquid stretch)
+                vec2 deformation = u_velocity * 0.05;
+                vec2 a = m - vec2(width, 0.0) - deformation;
+                vec2 b = m + vec2(width, 0.0) + deformation;
+                
+                float d = sdCapsule(p, a, b, radius);
+
+                // Compute exact 2D normal gradient for the SDF
+                vec2 e = vec2(0.001, 0.0);
+                float nx = sdCapsule(p + e.xy, a, b, radius) - d;
+                float ny = sdCapsule(p + e.yx, a, b, radius) - d;
+                normal2D = normalize(vec2(nx, ny));
+
+                return d;
+            }
+
+            // Background rendering function
+            vec3 renderBackground(vec2 uv) {
+                // Razor-sharp split line exactly at vertical center
+                float split = step(0.5, uv.y);
+                return mix(COLOR_TOP, COLOR_BOTTOM, split);
+            }
+
+            void main() {
+                float aspect = u_resolution.x / u_resolution.y;
+                vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+                vec2 mouse = u_mouse.xy / u_resolution.xy;
+                mouse.y = 1.0 - mouse.y;
+
+                vec2 normal2D;
+                float dist = getGlassShape(uv, mouse, aspect, normal2D);
+
+                vec3 finalColor;
+
+                // Screen-space antialiasing metric
+                float pixelSize = 1.0 / u_resolution.y;
+                float aa = smoothstep(pixelSize * 1.5, -pixelSize * 1.5, dist);
+
+                if (dist <= 0.01) { // Process pixels inside or near the glass edge
+                    
+                    // --- OPTICAL REFRACTION ---
+                    // Simulate physical lens depth based on distance to edge
+                    float depth = smoothstep(0.0, -0.15, dist);
+                    
+                    // Index of Refraction bending
+                    vec2 refractionOffset = normal2D * depth * 0.08;
+                    vec2 refractedUV = uv - refractionOffset;
+                    
+                    // --- CHROMATIC ABERRATION (DISPERSION) ---
+                    // Light splits into RGB bands at the thickest parts of the lens
+                    float dispersion = 0.008 * depth;
+                    float r = renderBackground(refractedUV + normal2D * dispersion).r;
+                    float g = renderBackground(refractedUV).g;
+                    float b = renderBackground(refractedUV - normal2D * dispersion).b;
+                    vec3 glassColor = vec3(r, g, b);
+
+                    // --- LIGHTING & SHADING ---
+                    // Construct a fake 3D normal from the 2D gradient and depth
+                    vec3 normal3D = normalize(vec3(normal2D.x, normal2D.y, depth * 3.0));
+                    vec3 viewDir = vec3(0.0, 0.0, 1.0);
+                    vec3 lightDir = normalize(vec3(0.0, -1.0, 0.8)); // Light from top-front
+                    
+                    // 1. Interior Shadowing (Ambient Occlusion)
+                    float edgeShadow = smoothstep(0.0, -0.04, dist);
+                    glassColor = mix(glassColor * 0.65, glassColor, edgeShadow);
+
+                    // 2. Primary Specular Highlight (The bright top curve)
+                    vec3 halfVec = normalize(lightDir + viewDir);
+                    float NdotH = max(dot(normal3D, halfVec), 0.0);
+                    float specular = pow(NdotH, 60.0) * 0.8;
+
+                    // 3. Fresnel Edge Reflection (The subtle glow around the boundary)
+                    float fresnel = pow(1.0 - max(dot(normal3D, viewDir), 0.0), 3.0);
+                    vec3 edgeGlow = vec3(1.0) * fresnel * 0.3;
+
+                    // 4. White Rim Stroke
+                    float rimStroke = smoothstep(-0.002, 0.0, dist) - smoothstep(0.0, 0.002, dist);
+
+                    // Composite all optical layers
+                    vec3 opticalResult = glassColor + specular + edgeGlow + (vec3(1.0) * rimStroke * 0.8);
+                    
+                    // Blend smoothly with the raw background for perfect anti-aliasing
+                    vec3 rawBg = renderBackground(uv);
+                    finalColor = mix(rawBg, opticalResult, aa);
+
+                } else {
+                    // Pixels completely outside the glass
+                    finalColor = renderBackground(uv);
+                }
+
+                // Slight vignette effect for presentation
+                float vignette = uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y);
+                finalColor *= clamp(pow(16.0 * vignette, 0.1), 0.0, 1.0) * 0.1 + 0.9;
+
+                outColor = vec4(finalColor, 1.0);
+            }
+        `;
+
+        // ============================================================================
+        // WEBGL ENGINE COMPILATION & SETUP
+        // ============================================================================
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader compilation failed:', gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error('Program linking failed:', gl.getProgramInfoLog(program));
+        }
+
+        // Buffer setup for full-screen quad
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        const positions = [
+            -1.0, -1.0,
+             1.0, -1.0,
+            -1.0,  1.0,
+            -1.0,  1.0,
+             1.0, -1.0,
+             1.0,  1.0,
         ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
-        const materials = [geoMatDark, geoMatDark, geoMatNeonBlue, geoMatNeonPink];
+        const vao = gl.createVertexArray();
+        gl.bindVertexArray(vao);
+        const posLoc = gl.getAttribLocation(program, "a_position");
+        gl.enableVertexAttribArray(posLoc);
+        gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-        for(let i = 0; i < 150; i++) {
-            const geom = geometries[Math.floor(Math.random() * geometries.length)];
-            const mat = materials[Math.floor(Math.random() * materials.length)];
-            const mesh = new THREE.Mesh(geom, mat);
-            
-            mesh.position.set(
-                (Math.random() - 0.5) * 40,
-                (Math.random() - 0.5) * 40,
-                (Math.random() - 0.5) * 40 - 15
-            );
-            
-            mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-            const scale = Math.random() * 2 + 0.5;
-            mesh.scale.set(scale, scale, scale);
-            
-            mesh.userData = {
-                rotSpeedX: (Math.random() - 0.5) * 0.02,
-                rotSpeedY: (Math.random() - 0.5) * 0.02,
-                floatSpeed: Math.random() * 0.02 + 0.01,
-                floatOffset: Math.random() * Math.PI * 2
-            };
+        // Uniform locations
+        const uRes = gl.getUniformLocation(program, "u_resolution");
+        const uMouse = gl.getUniformLocation(program, "u_mouse");
+        const uTime = gl.getUniformLocation(program, "u_time");
+        const uVel = gl.getUniformLocation(program, "u_velocity");
 
-            envGroup.add(mesh);
-        }
+        // ============================================================================
+        // PHYSICS INTERPOLATION & EVENT LISTENERS
+        // ============================================================================
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let targetX = mouseX;
+        let targetY = mouseY;
+        let velX = 0;
+        let velY = 0;
 
-        // ==========================================================================
-        // OFF-SCREEN RENDER TARGET (FOR SCREEN-SPACE REFRACTION)
-        // ==========================================================================
-        const rtParameters = {
-            minFilter: THREE.LinearFilter,
-            magFilter: THREE.LinearFilter,
-            format: THREE.RGBFormat,
-            type: THREE.HalfFloatType, // HDR support
-            encoding: THREE.sRGBEncoding
-        };
-        const renderTarget = new THREE.WebGLRenderTarget(
-            window.innerWidth * window.devicePixelRatio, 
-            window.innerHeight * window.devicePixelRatio, 
-            rtParameters
-        );
-
-        // ==========================================================================
-        // MASSIVE GLSL SHADERS (THE CORE OF THE REALISM)
-        // ==========================================================================
-        const liquidVertexShader = `
-            #define PHONG
-            varying vec3 vViewPosition;
-            varying vec3 vNormal;
-            varying vec3 vWorldPosition;
-            varying vec2 vUv;
-            varying vec3 vTangent;
-            varying vec3 vBitangent;
-
-            uniform float uTime;
-            uniform float uLiquidSpeed;
-            uniform float uDeformation;
-            uniform float uDetail;
-
-            // --- Advanced 3D Simplex Noise for Organic Fluidity ---
-            vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
-            vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
-            float snoise(vec3 v){ 
-                const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
-                const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
-                vec3 i  = floor(v + dot(v, C.yyy) );
-                vec3 x0 = v - i + dot(i, C.xxx) ;
-                vec3 g = step(x0.yzx, x0.xyz);
-                vec3 l = 1.0 - g;
-                vec3 i1 = min( g.xyz, l.zxy );
-                vec3 i2 = max( g.xyz, l.zxy );
-                vec3 x1 = x0 - i1 + 1.0 * C.xxx;
-                vec3 x2 = x0 - i2 + 2.0 * C.xxx;
-                vec3 x3 = x0 - 1.0 + 3.0 * C.xxx;
-                i = mod(i, 289.0 ); 
-                vec4 p = permute( permute( permute( 
-                            i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-                        + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
-                        + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
-                float n_ = 1.42857142857 - 1.0;
-                vec3  ns = n_ * D.wyz - D.xzx;
-                vec4 j = p - 49.0 * floor(p * ns.z *ns.z);
-                vec4 x_ = floor(j * ns.z);
-                vec4 y_ = floor(j - 7.0 * x_ );
-                vec4 x = x_ *ns.x + ns.yyyy;
-                vec4 y = y_ *ns.x + ns.yyyy;
-                vec4 h = 1.0 - abs(x) - abs(y);
-                vec4 b0 = vec4( x.xy, y.xy );
-                vec4 b1 = vec4( x.zw, y.zw );
-                vec4 s0 = floor(b0)*2.0 + 1.0;
-                vec4 s1 = floor(b1)*2.0 + 1.0;
-                vec4 sh = -step(h, vec4(0.0));
-                vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
-                vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
-                vec3 p0 = vec3(a0.xy,h.x);
-                vec3 p1 = vec3(a0.zw,h.y);
-                vec3 p2 = vec3(a1.xy,h.z);
-                vec3 p3 = vec3(a1.zw,h.w);
-                vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-                p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-                vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-                m = m * m;
-                return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
-            }
-
-            // --- Tangent Space Recalculation for Displaced Geometry ---
-            vec3 orthogonal(vec3 v) {
-                return normalize(abs(v.x) > abs(v.z) ? vec3(-v.y, v.x, 0.0) : vec3(0.0, -v.z, v.y));
-            }
-
-            void main() {
-                vUv = uv;
-                vec3 pos = position;
-                
-                // Multi-frequency noise layering for complex fluid dynamics
-                float n1 = snoise(pos * uDetail + uTime * uLiquidSpeed);
-                float n2 = snoise(pos * (uDetail * 2.2) - uTime * (uLiquidSpeed * 1.4));
-                float n3 = snoise(pos * (uDetail * 4.5) + uTime * (uLiquidSpeed * 0.8));
-                
-                float displacement = (n1 + n2 * 0.5 + n3 * 0.25) * uDeformation;
-                pos += normal * displacement;
-
-                // Accurate Normal Recalculation via Finite Difference
-                vec3 tangent = orthogonal(normal);
-                vec3 bitangent = normalize(cross(normal, tangent));
-                float offset = 0.02;
-                
-                vec3 pT = position + tangent * offset;
-                vec3 pB = position + bitangent * offset;
-                
-                float nT = (snoise(pT * uDetail + uTime * uLiquidSpeed) + snoise(pT * (uDetail * 2.2) - uTime * (uLiquidSpeed * 1.4)) * 0.5) * uDeformation;
-                float nB = (snoise(pB * uDetail + uTime * uLiquidSpeed) + snoise(pB * (uDetail * 2.2) - uTime * (uLiquidSpeed * 1.4)) * 0.5) * uDeformation;
-                
-                pT += tangent * nT;
-                pB += bitangent * nB;
-                
-                vec3 displacedNormal = normalize(cross(pT - pos, pB - pos));
-                
-                vNormal = normalize(normalMatrix * displacedNormal);
-                vTangent = normalize(normalMatrix * tangent);
-                vBitangent = normalize(normalMatrix * bitangent);
-
-                vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
-                vWorldPosition = worldPosition.xyz;
-                vec4 mvPosition = viewMatrix * worldPosition;
-                vViewPosition = -mvPosition.xyz;
-                gl_Position = projectionMatrix * mvPosition;
-            }
-        `;
-
-        const liquidFragmentShader = `
-            #define PHONG
-            uniform sampler2D tBackground;
-            uniform vec2 uResolution;
-            uniform float uIOR; 
-            uniform float uChromaticAberration;
-            uniform float uFresnelPower;
-            uniform float uGlassThickness;
-            uniform vec3 uColorTint;
-            uniform float uRoughness;
-
-            varying vec3 vViewPosition;
-            varying vec3 vNormal;
-            varying vec3 vWorldPosition;
-            varying vec2 vUv;
-
-            // Physical Fresnel Schlick Approximation
-            float fresnel(vec3 viewDir, vec3 normal, float power) {
-                float f = clamp(1.0 - dot(viewDir, normal), 0.0, 1.0);
-                return pow(f, power);
-            }
-
-            // High-End Screen-Space Refraction with Chromatic Dispersion
-            vec3 getRefraction(vec3 viewDir, vec3 normal, float ior, float dispersion, float thickness) {
-                // Calculate physical refraction vector
-                vec3 refVec = refract(-viewDir, normal, 1.0 / ior);
-                
-                // Project back to screen coordinates
-                vec2 uv = gl_FragCoord.xy / uResolution.xy;
-                
-                // Distort UVs based on normal and physical thickness
-                vec2 distortion = refVec.xy * thickness;
-                
-                // Chromatic Aberration: Sample texture 3 times with offsets
-                vec2 uvR = uv + distortion * (1.0 + dispersion);
-                vec2 uvG = uv + distortion;
-                vec2 uvB = uv + distortion * (1.0 - dispersion);
-
-                float r = texture2D(tBackground, uvR).r;
-                float g = texture2D(tBackground, uvG).g;
-                float b = texture2D(tBackground, uvB).b;
-
-                return vec3(r, g, b);
-            }
-
-            void main() {
-                vec3 normal = normalize(vNormal);
-                vec3 viewDir = normalize(vViewPosition);
-
-                // 1. BASE REFRACTION & DISPERSION
-                vec3 refractionColor = getRefraction(viewDir, normal, uIOR, uChromaticAberration, uGlassThickness);
-                
-                // Apply subtle physical tint to the glass
-                refractionColor *= uColorTint;
-
-                // 2. FRESNEL EDGE REFLECTIONS
-                float fTerm = fresnel(viewDir, normal, uFresnelPower);
-                
-                // Simulate HDR environment reflection map purely via math & fresnel mix
-                vec3 reflectionColor = vec3(1.0, 1.0, 1.0); // Pure white light reflection
-                
-                // Combine Refraction + Reflection based on Fresnel angle
-                vec3 finalColor = mix(refractionColor, reflectionColor, fTerm * 0.6);
-
-                // 3. SPECULAR HIGHLIGHTS (Mocked physically based specular lobes)
-                vec3 lightDir1 = normalize(vec3(10.0, 20.0, 15.0));
-                vec3 halfVector1 = normalize(lightDir1 + viewDir);
-                float NdotH1 = max(0.0, dot(normal, halfVector1));
-                float spec1 = pow(NdotH1, 250.0) * 1.5; // Sharp bright highlight
-
-                vec3 lightDir2 = normalize(vec3(-10.0, 0.0, -10.0));
-                vec3 halfVector2 = normalize(lightDir2 + viewDir);
-                float NdotH2 = max(0.0, dot(normal, halfVector2));
-                float spec2 = pow(NdotH2, 100.0) * 0.8; // Softer fill highlight
-
-                finalColor += vec3(1.0, 1.0, 1.0) * spec1;
-                finalColor += vec3(0.0, 0.9, 1.0) * spec2; // Cyan highlight tint
-
-                // Advanced Tone Mapping & Gamma handled by WebGLRenderer, but we ensure output is solid
-                gl_FragColor = vec4(finalColor, 1.0);
-            }
-        `;
-
-        // ==========================================================================
-        // MATERIAL & MESH INSTANTIATION
-        // ==========================================================================
-        const liquidUniforms = {
-            uTime: { value: 0 },
-            uLiquidSpeed: { value: 0.4 },
-            uDeformation: { value: 0.4 },
-            uDetail: { value: 1.5 },
-            tBackground: { value: renderTarget.texture },
-            uResolution: { value: new THREE.Vector2(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio) },
-            uIOR: { value: 1.5 },
-            uChromaticAberration: { value: 0.08 },
-            uFresnelPower: { value: 4.0 },
-            uGlassThickness: { value: 0.2 },
-            uColorTint: { value: new THREE.Color(0xf2f7ff) },
-            uRoughness: { value: 0.0 }
-        };
-
-        const liquidMaterial = new THREE.ShaderMaterial({
-            vertexShader: liquidVertexShader,
-            fragmentShader: liquidFragmentShader,
-            uniforms: liquidUniforms,
-            transparent: true
+        window.addEventListener('mousemove', (e) => {
+            targetX = e.clientX;
+            targetY = e.clientY;
         });
 
-        // Use a highly tessellated sphere for smooth displacement (Polygons: ~260k)
-        const liquidGeometry = new THREE.IcosahedronGeometry(3.5, 128); 
-        const liquidMesh = new THREE.Mesh(liquidGeometry, liquidMaterial);
-        scene.add(liquidMesh);
+        window.addEventListener('touchmove', (e) => {
+            targetX = e.touches[0].clientX;
+            targetY = e.touches[0].clientY;
+        }, { passive: true });
 
-        // ==========================================================================
-        // POST-PROCESSING PIPELINE (BLOOM & HDR)
-        // ==========================================================================
-        const renderScene = new THREE.RenderPass(scene, camera);
-        
-        const bloomPass = new THREE.UnrealBloomPass(
-            new THREE.Vector2(window.innerWidth, window.innerHeight),
-            1.2,  // strength
-            0.5,  // radius
-            0.85  // threshold (only bloom bright highlights)
-        );
-
-        const composer = new THREE.EffectComposer(renderer);
-        composer.addPass(renderScene);
-        composer.addPass(bloomPass);
-
-        // ==========================================================================
-        // DAT.GUI CONTROLS (THE SLIDERS YOU REQUESTED)
-        // ==========================================================================
-        const gui = new dat.GUI({ width: 340 });
-        
-        const params = {
-            ior: 1.50,
-            dispersion: 0.08,
-            thickness: 0.20,
-            fresnel: 4.0,
-            viscosity: 0.40,
-            turbulence: 0.40,
-            detail: 1.5,
-            tint: '#f2f7ff',
-            bloom: 1.2,
-            envSpeed: 1.0
-        };
-
-        // DOM UI Updaters
-        const uiIOR = document.getElementById('stat-ior');
-        const uiDisp = document.getElementById('stat-dispersion');
-        const uiVisc = document.getElementById('stat-viscosity');
-
-        const fOptics = gui.addFolder('OPTICAL PHYSICS (APPLE GLASS)');
-        fOptics.add(params, 'ior', 1.0, 2.5).name('Index of Refraction').onChange(v => { liquidUniforms.uIOR.value = v; uiIOR.innerText = v.toFixed(2); });
-        fOptics.add(params, 'dispersion', 0.0, 0.2).name('Chromatic Aberration').onChange(v => { liquidUniforms.uChromaticAberration.value = v; uiDisp.innerText = v.toFixed(2); });
-        fOptics.add(params, 'thickness', 0.01, 1.0).name('Physical Thickness').onChange(v => liquidUniforms.uGlassThickness.value = v);
-        fOptics.add(params, 'fresnel', 0.1, 10.0).name('Fresnel Edge Curve').onChange(v => liquidUniforms.uFresnelPower.value = v);
-        fOptics.addColor(params, 'tint').name('Crystal Tint').onChange(v => liquidUniforms.uColorTint.value.set(v));
-        fOptics.open();
-
-        const fFluid = gui.addFolder('FLUID DYNAMICS');
-        fFluid.add(params, 'viscosity', 0.0, 2.0).name('Flow Speed').onChange(v => { liquidUniforms.uLiquidSpeed.value = v; uiVisc.innerText = v.toFixed(2); });
-        fFluid.add(params, 'turbulence', 0.0, 1.5).name('Wave Amplitude').onChange(v => liquidUniforms.uDeformation.value = v);
-        fFluid.add(params, 'detail', 0.1, 5.0).name('Surface Complexity').onChange(v => liquidUniforms.uDetail.value = v);
-        fFluid.open();
-
-        const fPost = gui.addFolder('RENDER ENGINE');
-        fPost.add(params, 'bloom', 0.0, 3.0).name('HDR Bloom Strength').onChange(v => bloomPass.strength = v);
-        fPost.add(params, 'envSpeed', 0.0, 3.0).name('Environment Speed');
-
-        // ==========================================================================
-        // MAIN RENDER LOOP & LOGIC
-        // ==========================================================================
-        const clock = new THREE.Clock();
-        const fpsElement = document.getElementById('fps-counter');
-        let frameCount = 0;
-        let lastTime = performance.now();
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const elapsedTime = clock.getElapsedTime();
-            
-            // 1. Update Shader Time Uniform
-            liquidUniforms.uTime.value = elapsedTime;
-
-            // 2. Animate Procedural Environment
-            envGroup.rotation.y = elapsedTime * 0.1 * params.envSpeed;
-            envGroup.rotation.z = elapsedTime * 0.05 * params.envSpeed;
-            
-            const children = envGroup.children;
-            for(let i = 0; i < children.length; i++) {
-                const mesh = children[i];
-                mesh.rotation.x += mesh.userData.rotSpeedX * params.envSpeed;
-                mesh.rotation.y += mesh.userData.rotSpeedY * params.envSpeed;
-                mesh.position.y += Math.sin(elapsedTime * mesh.userData.floatSpeed + mesh.userData.floatOffset) * 0.05 * params.envSpeed;
-            }
-
-            // 3. Update Controls
-            controls.update();
-
-            // 4. MULTI-PASS RENDERING
-            // Pass A: Hide Liquid, Render Environment to Texture (for Refraction)
-            liquidMesh.visible = false;
-            renderer.setRenderTarget(renderTarget);
-            renderer.render(scene, camera);
-
-            // Pass B: Show Liquid, Render Everything to Screen via Composer (Bloom applied)
-            liquidMesh.visible = true;
-            renderer.setRenderTarget(null);
-            composer.render();
-
-            // 5. FPS Calculation
-            frameCount++;
-            const timeNow = performance.now();
-            if (timeNow >= lastTime + 1000) {
-                fpsElement.innerText = Math.round((frameCount * 1000) / (timeNow - lastTime));
-                frameCount = 0;
-                lastTime = timeNow;
-            }
-        }
-
-        // ==========================================================================
-        // WINDOW RESIZE HANDLING
-        // ==========================================================================
-        window.addEventListener('resize', () => {
+        function resizeCanvas() {
+            const dpr = Math.min(window.devicePixelRatio, 2); // Cap at 2x for performance
             const width = window.innerWidth;
             const height = window.innerHeight;
-            const pixelRatio = Math.min(window.devicePixelRatio, 2);
-
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-
-            renderer.setSize(width, height);
-            composer.setSize(width, height);
             
-            // Update Render Target and Shader Resolution Uniforms
-            renderTarget.setSize(width * pixelRatio, height * pixelRatio);
-            liquidUniforms.uResolution.value.set(width * pixelRatio, height * pixelRatio);
-        });
-
-        // ==========================================================================
-        // LOADING SCREEN SEQUENCE SIMULATION
-        // ==========================================================================
-        let progress = 0;
-        const progressFill = document.getElementById('progress-fill');
-        const loaderStatus = document.getElementById('loader-status');
-        const loaderWrapper = document.getElementById('loader-wrapper');
-
-        const loadingInterval = setInterval(() => {
-            progress += Math.random() * 15;
-            if(progress >= 100) {
-                progress = 100;
-                clearInterval(loadingInterval);
-                loaderStatus.innerText = "SYSTEM READY";
-                progressFill.style.width = "100%";
-                setTimeout(() => {
-                    loaderWrapper.style.opacity = '0';
-                    setTimeout(() => {
-                        loaderWrapper.style.display = 'none';
-                        animate(); // Start animation loop only after loading
-                    }, 1200);
-                }, 500);
-            } else {
-                progressFill.style.width = progress + "%";
-                if(progress > 30 && progress < 60) loaderStatus.innerText = "GENERATING 4D NOISE...";
-                if(progress > 60 && progress < 90) loaderStatus.innerText = "CALCULATING REFRACTION...";
+            if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+                gl.viewport(0, 0, canvas.width, canvas.height);
             }
-        }, 200);
+        }
 
+        // ============================================================================
+        // MAIN RENDER LOOP
+        // ============================================================================
+        function render(time) {
+            resizeCanvas();
+
+            // Smooth spring physics for mouse following
+            const dx = targetX - mouseX;
+            const dy = targetY - mouseY;
+            
+            velX = dx * 0.15;
+            velY = dy * 0.15;
+            
+            mouseX += velX;
+            mouseY += velY;
+
+            gl.useProgram(program);
+            gl.bindVertexArray(vao);
+
+            gl.uniform2f(uRes, canvas.width, canvas.height);
+            // Pass physical pixel coordinates scaled by DPR
+            gl.uniform2f(uMouse, mouseX * Math.min(window.devicePixelRatio, 2), mouseY * Math.min(window.devicePixelRatio, 2));
+            gl.uniform2f(uVel, velX / window.innerWidth, velY / window.innerHeight);
+            gl.uniform1f(uTime, time * 0.001);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+            requestAnimationFrame(render);
+        }
+
+        requestAnimationFrame(render);
     </script>
 </body>
 </html>
