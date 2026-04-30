@@ -271,6 +271,7 @@
             transition: opacity 0.5s ease;
             text-shadow: 0 0 20px rgba(255,255,255,0.5);
         }
+        video { display: none; }
 
     </style>
 </head>
@@ -289,6 +290,7 @@
         <button class="toggle-btn active" id="tog-chroma" title="Toggle Chromatic Aberration">🌈</button>
         <button class="toggle-btn active" id="tog-hd" title="Toggle High Refraction">💎</button>
         <button class="toggle-btn" id="tog-grain" title="Toggle Film Grain">🎞️</button>
+        <button class="toggle-btn" id="tog-face" title="Toggle Face Lens">👤</button>
     </div>
 
     <div id="mac-dock-container">
@@ -520,6 +522,9 @@
             uniform float u_hdActive;
             uniform float u_grainActive;
             uniform float u_time;
+            uniform sampler2D u_faceTex;
+            uniform float u_faceActive;
+            uniform float u_impact;
 
             // Random hash for film grain
             float hash(vec2 p) {
@@ -623,6 +628,10 @@
                     float rimStroke = smoothstep(-0.002, 0.0, dist) - smoothstep(0.0, 0.002, dist);
 
                     vec3 opticalResult = glassColor + specular + edgeGlow + (vec3(1.0) * rimStroke * 0.8);
+                    if(u_faceActive > 0.5) {
+                        vec4 face = texture(u_faceTex, v_uv);
+                        opticalResult = mix(opticalResult, face.rgb, depth * 0.8);
+                    }
                     
                     vec3 rawBg = renderBackground(uv);
                     finalColor = mix(rawBg, opticalResult, aa);
@@ -637,7 +646,10 @@
                     finalColor += noise * 0.015;
                 }
 
+                // Apply the shake to the final output color
+                vec2 shake = vec2(hash(vec2(u_time)), hash(vec2(u_time + 1.1))) * u_impact * 0.005;
                 outColor = vec4(finalColor, 1.0);
+
             }
         `;
 
@@ -675,8 +687,25 @@
             chroma: gl.getUniformLocation(prog, "u_chromaActive"),
             hd: gl.getUniformLocation(prog, "u_hdActive"),
             grain: gl.getUniformLocation(prog, "u_grainActive"),
-            time: gl.getUniformLocation(prog, "u_time")
+            time: gl.getUniformLocation(prog, "u_time"),
+            face: gl.getUniformLocation(prog, "u_faceActive"),
+            faceTex: gl.getUniformLocation(prog, "u_faceTex"),
+            impact: gl.getUniformLocation(prog, "u_impact")
         };
+
+        let faceActive = false, impact = 0;
+        const video = document.createElement('video');
+        const faceTex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, faceTex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        
+        document.getElementById('tog-face').addEventListener('click', async function() {
+            faceActive = !faceActive; this.classList.toggle('active');
+            if(faceActive && !video.srcObject) video.srcObject = await navigator.mediaDevices.getUserMedia({video: true});
+            video.play();
+        });
 
         // ============================================================================
         // 5. PHYSICS, INPUT & RENDER LOOP
@@ -689,8 +718,14 @@
         let velY = 0;
 
         window.addEventListener('mousemove', (e) => { 
-            if(!isAutopilot) { targetX = e.clientX; targetY = e.clientY; }
-        });
+    if(!isAutopilot) { 
+        targetX = e.clientX; 
+        targetY = e.clientY; 
+    }
+    // ADD THESE TWO LINES:
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+});
 
         function resize() {
             const dpr = Math.min(window.devicePixelRatio, 2);
@@ -729,6 +764,15 @@
             velY = dy * 0.12;
             mouseX += velX;
             mouseY += velY;
+            // Haptic Impact Logic (Edges)
+            if(mouseX < 50 || mouseX > window.innerWidth - 50 || mouseY < 50 || mouseY > window.innerHeight - 50) impact = 1.0;
+            impact *= 0.9; // Decay shake
+
+            // Update Face Texture
+            if(faceActive) {
+                gl.bindTexture(gl.TEXTURE_2D, faceTex);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+            }
 
             // Draw
             gl.useProgram(prog);
@@ -746,6 +790,15 @@
             gl.uniform1f(locs.hd, hdEnabled ? 1.0 : 0.0);
             gl.uniform1f(locs.grain, grainEnabled ? 1.0 : 0.0);
             gl.uniform1f(locs.time, now * 0.001);
+           // Optimized Texture & Uniform Binding
+            gl.uniform1f(locs.face, faceActive ? 1.0 : 0.0);
+            gl.uniform1f(locs.impact, impact);
+
+            if (faceActive) {
+                gl.activeTexture(gl.TEXTURE0);
+                gl.bindTexture(gl.TEXTURE_2D, faceTex);
+                gl.uniform1i(locs.faceTex, 0);
+            }
 
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             requestAnimationFrame(render);
