@@ -2,29 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Liquid Glass Lens - 30 Colors Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Liquid Glass OS - Ultimate Interactive Edition</title>
     <style>
+        /* ==========================================================================
+           1. CORE SYSTEM STYLES & VARIABLES
+           ========================================================================== */
         :root {
-            --bg-dark: #0a0a0c;
+            --glass-bg: rgba(20, 20, 25, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-glow: rgba(255, 255, 255, 0.05);
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.6);
+            --accent: #00ffcc;
+            --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             user-select: none;
             -webkit-user-drag: none;
+            cursor: none !important; /* HIDES DEFAULT CURSOR AS REQUESTED */
         }
 
         body, html {
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            background-color: var(--bg-dark);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000;
+            font-family: var(--font-stack);
+            -webkit-font-smoothing: antialiased;
         }
 
+        /* Custom OS Ring Cursor */
+        #custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s, background 0.2s;
+            mix-blend-mode: difference;
+        }
+
+        #custom-cursor.hovering {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+        }
+
+        /* WebGL Layer */
         #webgl-canvas {
             position: absolute;
             top: 0;
@@ -32,167 +67,432 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            display: block;
-            cursor: crosshair;
         }
 
-        /* 30 Colors Simple UI Overlay */
-        #color-picker-container {
+        /* ==========================================================================
+           2. TOP LEFT MENU (SYSTEM CONTROLS)
+           ========================================================================== */
+        #top-left-menu {
             position: absolute;
-            bottom: 30px;
+            top: 15px;
+            left: 15px;
+            z-index: 100;
+            display: flex;
+            gap: 8px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
+            border: 1px solid var(--glass-border);
+            padding: 6px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3), inset 0 1px 0 var(--glass-glow);
+        }
+
+        .menu-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .menu-btn.active {
+            background: var(--text-main);
+            color: #000;
+        }
+
+        .system-logo {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        /* ==========================================================================
+           3. TOP RIGHT MENU (OPTICAL TOGGLES)
+           ========================================================================== */
+        #top-right-menu {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+            display: flex;
+            gap: 8px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
+            border: 1px solid var(--glass-border);
+            padding: 6px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .toggle-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .toggle-btn:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+        }
+
+        .toggle-btn.active {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.3);
+            color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+        }
+
+        /* ==========================================================================
+           4. MAC OS STYLE TASKBAR (60 COLORS)
+           ========================================================================== */
+        #mac-dock-container {
+            position: absolute;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 10;
-            background: rgba(15, 15, 20, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 30px;
-            padding: 15px 25px;
+            z-index: 100;
             display: flex;
-            gap: 10px;
-            max-width: 90vw;
+            justify-content: center;
+            align-items: flex-end;
+            height: 80px;
+            width: 90vw;
+            pointer-events: none; /* Let clicks pass through empty areas */
+        }
+
+        #mac-dock {
+            display: flex;
+            gap: 4px;
+            padding: 10px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px) saturate(200%);
+            -webkit-backdrop-filter: blur(25px) saturate(200%);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+            pointer-events: auto;
+            position: relative;
             overflow-x: auto;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            overflow-y: hidden;
+            max-width: 100%;
+            scroll-behavior: smooth;
         }
 
-        /* Hide Scrollbar but keep functionality */
-        #color-picker-container::-webkit-scrollbar {
-            display: none;
-        }
-        #color-picker-container {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        /* Hide scrollbar for the dock */
+        #mac-dock::-webkit-scrollbar { display: none; }
+        #mac-dock { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .color-dot {
-            flex: 0 0 auto;
+        .dock-item {
+            position: relative;
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            background: #fff;
+            transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), margin 0.2s;
+            cursor: none;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+            transform-origin: bottom center;
         }
 
-        .color-dot:hover {
-            transform: translateY(-5px) scale(1.2);
-            border-color: rgba(255, 255, 255, 0.8);
-            z-index: 2;
-        }
-
-        .color-dot.active {
-            transform: translateY(-5px) scale(1.3);
-            border-color: #ffffff;
-            box-shadow: 0 8px 20px rgba(255,255,255,0.3);
-        }
-
-        #ui-label {
+        .dock-item.active::after {
+            content: '';
             position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 10;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 11px;
-            letter-spacing: 3px;
-            pointer-events: none;
-            font-weight: 600;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #fff;
         }
+
+        /* Tooltip for Dock */
+        .dock-tooltip {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .dock-item:hover .dock-tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* System Messages */
+        #sys-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 24px;
+            font-weight: 300;
+            letter-spacing: 10px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 200;
+            transition: opacity 0.5s ease;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
     </style>
 </head>
 <body>
 
-    <div id="ui-label">LIQUID GLASS OPTICS // 30 COLOR ENGINE</div>
-    <div id="color-picker-container"></div>
+    <div id="custom-cursor"></div>
+    <div id="sys-message">AUTOPILOT ENGAGED</div>
+
+    <div id="top-left-menu" class="interactive-el">
+        <button class="menu-btn system-logo">OS</button>
+        <button class="menu-btn" id="btn-autopilot">Autopilot</button>
+        <button class="menu-btn" id="btn-recenter">Recenter</button>
+    </div>
+
+    <div id="top-right-menu" class="interactive-el">
+        <button class="toggle-btn active" id="tog-chroma" title="Toggle Chromatic Aberration">🌈</button>
+        <button class="toggle-btn active" id="tog-hd" title="Toggle High Refraction">💎</button>
+        <button class="toggle-btn" id="tog-grain" title="Toggle Film Grain">🎞️</button>
+    </div>
+
+    <div id="mac-dock-container">
+        <div id="mac-dock" class="interactive-el">
+            </div>
+    </div>
+
     <canvas id="webgl-canvas"></canvas>
 
     <script>
         // ============================================================================
-        // 30 VIBRANT SPLIT-BACKGROUND COLOR PALETTES (RGB 0.0 - 1.0)
+        // 1. ADVANCED MATHEMATICS & COLOR THEORY (GENERATING 60 PALETTES)
         // ============================================================================
-        const PALETTES = [
-            { top: [0.86, 0.89, 0.93], bot: [0.20, 0.22, 0.25] }, // 1. Classic Glass (Reference)
-            { top: [0.10, 0.00, 0.30], bot: [0.00, 1.00, 0.80] }, // 2. Midnight Neon
-            { top: [1.00, 0.70, 0.10], bot: [0.00, 0.20, 0.40] }, // 3. Berkeley Gold
-            { top: [0.00, 0.13, 0.28], bot: [0.41, 1.00, 0.12] }, // 4. Action Green
-            { top: [1.00, 0.00, 0.40], bot: [1.00, 0.80, 0.00] }, // 5. Cyberpunk
-            { top: [0.00, 0.80, 1.00], bot: [0.00, 0.20, 0.60] }, // 6. Ocean Breeze
-            { top: [1.00, 0.80, 0.85], bot: [0.90, 0.30, 0.50] }, // 7. Cherry Blossom
-            { top: [0.80, 0.00, 0.00], bot: [1.00, 0.40, 0.00] }, // 8. Lava Flow
-            { top: [0.05, 0.40, 0.10], bot: [0.60, 1.00, 0.20] }, // 9. Toxic Sludge
-            { top: [0.40, 0.00, 0.60], bot: [0.80, 0.60, 1.00] }, // 10. Amethyst
-            { top: [0.05, 0.00, 0.00], bot: [0.90, 0.00, 0.20] }, // 11. Crimson Night
-            { top: [1.00, 0.00, 0.80], bot: [0.20, 0.00, 0.60] }, // 12. Synthwave
-            { top: [1.00, 0.90, 0.00], bot: [1.00, 0.20, 0.00] }, // 13. Solar Flare
-            { top: [0.80, 1.00, 1.00], bot: [0.00, 0.60, 0.80] }, // 14. Arctic Ice
-            { top: [0.10, 0.10, 0.10], bot: [0.80, 0.60, 0.20] }, // 15. Royal Gold
-            { top: [1.00, 0.90, 0.70], bot: [1.00, 0.40, 0.40] }, // 16. Peach
-            { top: [0.00, 0.00, 0.00], bot: [0.00, 0.10, 0.30] }, // 17. Deep Space
-            { top: [0.80, 0.90, 1.00], bot: [1.00, 0.80, 0.90] }, // 18. Holographic
-            { top: [0.10, 0.80, 0.40], bot: [0.00, 0.30, 0.10] }, // 19. Emerald City
-            { top: [0.60, 0.40, 0.20], bot: [0.20, 0.10, 0.00] }, // 20. Espresso
-            { top: [0.20, 0.00, 0.40], bot: [0.80, 0.00, 0.60] }, // 21. Nebula
-            { top: [0.90, 0.90, 0.90], bot: [0.10, 0.10, 0.10] }, // 22. Pure Mono
-            { top: [1.00, 0.40, 0.80], bot: [0.40, 0.00, 0.20] }, // 23. Bubblegum
-            { top: [0.20, 0.60, 1.00], bot: [0.00, 0.00, 0.40] }, // 24. Deep Dive
-            { top: [1.00, 1.00, 1.00], bot: [0.00, 0.80, 1.00] }, // 25. Cloud Nine
-            { top: [0.50, 1.00, 0.00], bot: [0.00, 0.40, 0.00] }, // 26. Matrix
-            { top: [1.00, 0.20, 0.20], bot: [0.20, 0.00, 0.00] }, // 27. Blood Moon
-            { top: [0.00, 0.50, 0.50], bot: [0.00, 0.10, 0.10] }, // 28. Teal Abyss
-            { top: [0.90, 0.80, 1.00], bot: [0.40, 0.20, 0.60] }, // 29. Lavender
-            { top: [1.00, 0.60, 0.00], bot: [0.40, 0.00, 0.80] }  // 30. Sunset Void
-        ];
-
-        let targetColorTop = [...PALETTES[0].top];
-        let targetColorBot = [...PALETTES[0].bot];
-        let currentColorTop = [...PALETTES[0].top];
-        let currentColorBot = [...PALETTES[0].bot];
-
-        // ============================================================================
-        // UI SETUP
-        // ============================================================================
-        const pickerContainer = document.getElementById('color-picker-container');
         
-        // Helper to convert normalized RGB float array to CSS rgb string
+        // Converts HSL to RGB array [r, g, b] where values are 0.0 to 1.0
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+            if (s === 0) {
+                r = g = b = l; 
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if(t < 0) t += 1;
+                    if(t > 1) t -= 1;
+                    if(t < 1/6) return p + (q - p) * 6 * t;
+                    if(t < 1/2) return q;
+                    if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            return [r, g, b];
+        }
+
+        // Helper to convert float array to CSS rgb string
         function toCSS(arr) {
             return `rgb(${Math.round(arr[0]*255)}, ${Math.round(arr[1]*255)}, ${Math.round(arr[2]*255)})`;
         }
 
-        PALETTES.forEach((palette, index) => {
-            const dot = document.createElement('div');
-            dot.className = `color-dot ${index === 0 ? 'active' : ''}`;
+        // Generate exactly 60 highly vibrant, algorithmically harmonious palettes
+        const PALETTES = [];
+        const TOTAL_COLORS = 60;
+        
+        for(let i = 0; i < TOTAL_COLORS; i++) {
+            const huePrimary = i / TOTAL_COLORS;
+            // Create a complementary/analogous mix for the bottom color
+            const hueSecondary = (huePrimary + 0.15 + (Math.sin(i) * 0.1)) % 1.0; 
             
-            // Create a diagonal gradient CSS background to preview the split
-            const cTop = toCSS(palette.top);
-            const cBot = toCSS(palette.bot);
-            dot.style.background = `linear-gradient(135deg, ${cTop} 0%, ${cTop} 50%, ${cBot} 50%, ${cBot} 100%)`;
+            // Vary lightness and saturation to create deep, cinematic splits
+            const sTop = 0.8 + (Math.random() * 0.2);
+            const lTop = 0.5 + (Math.random() * 0.3);
+            
+            const sBot = 0.7 + (Math.random() * 0.3);
+            const lBot = 0.1 + (Math.random() * 0.2); // Keep bottom dark for contrast
 
-            dot.addEventListener('click', () => {
-                document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-                dot.classList.add('active');
-                targetColorTop = [...palette.top];
-                targetColorBot = [...palette.bot];
+            PALETTES.push({
+                id: i,
+                name: `Spectrum OS.${i < 10 ? '0'+i : i}`,
+                top: hslToRgb(huePrimary, sTop, lTop),
+                bot: hslToRgb(hueSecondary, sBot, lBot)
             });
-
-            pickerContainer.appendChild(dot);
-        });
-
-        // ============================================================================
-        // WEBGL ENGINE SETUP (REVERTED TO STABLE V3 BASE + UNIFORM COLORS)
-        // ============================================================================
-        const canvas = document.getElementById('webgl-canvas');
-        const gl = canvas.getContext('webgl2', { 
-            antialias: true, 
-            alpha: false, 
-            powerPreference: "high-performance" 
-        });
-
-        if (!gl) {
-            document.body.innerHTML = '<h1 style="color:white;text-align:center;margin-top:20vh;">WebGL 2.0 Required</h1>';
         }
 
-        // --- VERTEX SHADER ---
+        // Override first 3 with absolute cinematic defaults
+        PALETTES[0] = { name: "Absolute Gray", top: [0.86, 0.89, 0.93], bot: [0.20, 0.22, 0.25] };
+        PALETTES[1] = { name: "Neon Midnight", top: [0.10, 0.00, 0.30], bot: [0.00, 1.00, 0.80] };
+        PALETTES[2] = { name: "Berkeley Sun", top: [1.00, 0.70, 0.10], bot: [0.00, 0.20, 0.40] };
+
+        // Global State
+        let targetColorTop = [...PALETTES[0].top];
+        let targetColorBot = [...PALETTES[0].bot];
+        let currentColorTop = [...PALETTES[0].top];
+        let currentColorBot = [...PALETTES[0].bot];
+        
+        let isAutopilot = false;
+        let chromaEnabled = true;
+        let hdEnabled = true;
+        let grainEnabled = false;
+
+        // ============================================================================
+        // 2. DOM & UI INITIALIZATION
+        // ============================================================================
+        const cursor = document.getElementById('custom-cursor');
+        const dock = document.getElementById('mac-dock');
+        const sysMsg = document.getElementById('sys-message');
+
+        // Populate Dock
+        PALETTES.forEach((pal, index) => {
+            const item = document.createElement('div');
+            item.className = `dock-item ${index === 0 ? 'active' : ''}`;
+            
+            const cT = toCSS(pal.top);
+            const cB = toCSS(pal.bot);
+            item.style.background = `linear-gradient(135deg, ${cT} 50%, ${cB} 50%)`;
+            
+            const tooltip = document.createElement('div');
+            tooltip.className = 'dock-tooltip';
+            tooltip.innerText = pal.name;
+            item.appendChild(tooltip);
+
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.dock-item').forEach(d => d.classList.remove('active'));
+                item.classList.add('active');
+                targetColorTop = [...pal.top];
+                targetColorBot = [...pal.bot];
+            });
+
+            dock.appendChild(item);
+        });
+
+        // macOS Dock Magnification Logic
+        const dockItems = document.querySelectorAll('.dock-item');
+        const DOCK_BASE_SIZE = 24;
+        const DOCK_MAX_SIZE = 48;
+        const DOCK_RADIUS = 150; // Influence distance
+
+        document.addEventListener('mousemove', (e) => {
+            // Update Custom Cursor
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+
+            // Calculate Dock Magnification
+            const dockRect = dock.getBoundingClientRect();
+            if(e.clientY > dockRect.top - 50) {
+                dockItems.forEach(item => {
+                    const rect = item.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const dist = Math.abs(e.clientX - centerX);
+                    
+                    if(dist < DOCK_RADIUS) {
+                        const scale = 1 + (1 - dist/DOCK_RADIUS) * ((DOCK_MAX_SIZE / DOCK_BASE_SIZE) - 1);
+                        item.style.transform = `scale(${scale})`;
+                        item.style.margin = `0 ${scale * 4}px`;
+                        item.style.zIndex = Math.round(scale * 10);
+                    } else {
+                        item.style.transform = `scale(1)`;
+                        item.style.margin = `0 0`;
+                        item.style.zIndex = 1;
+                    }
+                });
+            } else {
+                dockItems.forEach(item => {
+                    item.style.transform = `scale(1)`;
+                    item.style.margin = `0 0`;
+                    item.style.zIndex = 1;
+                });
+            }
+        });
+
+        // Custom Cursor Hover States
+        document.querySelectorAll('.interactive-el').forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
+        });
+
+        // ============================================================================
+        // 3. EVENT LISTENERS FOR TOP MENUS
+        // ============================================================================
+        function showSysMessage(text) {
+            sysMsg.innerText = text;
+            sysMsg.style.opacity = 1;
+            setTimeout(() => sysMsg.style.opacity = 0, 1500);
+        }
+
+        document.getElementById('btn-autopilot').addEventListener('click', function() {
+            isAutopilot = !isAutopilot;
+            this.classList.toggle('active');
+            showSysMessage(isAutopilot ? "AUTOPILOT ENGAGED" : "MANUAL CONTROL");
+        });
+
+        document.getElementById('btn-recenter').addEventListener('click', () => {
+            isAutopilot = false;
+            document.getElementById('btn-autopilot').classList.remove('active');
+            targetX = window.innerWidth / 2;
+            targetY = window.innerHeight / 2;
+            showSysMessage("CENTERING LENS");
+        });
+
+        document.getElementById('tog-chroma').addEventListener('click', function() {
+            chromaEnabled = !chromaEnabled;
+            this.classList.toggle('active');
+            showSysMessage(chromaEnabled ? "DISPERSION ON" : "DISPERSION OFF");
+        });
+
+        document.getElementById('tog-hd').addEventListener('click', function() {
+            hdEnabled = !hdEnabled;
+            this.classList.toggle('active');
+            showSysMessage(hdEnabled ? "HIGH REFRACTION" : "LOW REFRACTION");
+        });
+
+        document.getElementById('tog-grain').addEventListener('click', function() {
+            grainEnabled = !grainEnabled;
+            this.classList.toggle('active');
+        });
+
+        // ============================================================================
+        // 4. WEBGL 2.0 ENGINE (MASSIVE OPTICAL SHADER)
+        // ============================================================================
+        const canvas = document.getElementById('webgl-canvas');
+        const gl = canvas.getContext('webgl2', { antialias: true, alpha: false, powerPreference: "high-performance" });
+
         const vsSource = `#version 300 es
             in vec2 a_position;
             out vec2 v_uv;
@@ -203,7 +503,6 @@
             }
         `;
 
-        // --- FRAGMENT SHADER (STABLE OPTICAL PHYSICS) ---
         const fsSource = `#version 300 es
             precision highp float;
 
@@ -215,15 +514,28 @@
             uniform vec2 u_velocity;
             uniform vec3 u_colorTop;
             uniform vec3 u_colorBot;
+            
+            // Dynamic Toggles
+            uniform float u_chromaActive;
+            uniform float u_hdActive;
+            uniform float u_grainActive;
+            uniform float u_time;
 
-            // SDF for a Pill/Capsule shape
+            // Random hash for film grain
+            float hash(vec2 p) {
+                vec3 p3  = fract(vec3(p.xyx) * .1031);
+                p3 += dot(p3, p3.yzx + 33.33);
+                return fract((p3.x + p3.y) * p3.z);
+            }
+
+            // SDF Capsule for the Pill Shape
             float sdCapsule(vec2 p, vec2 a, vec2 b, float r) {
                 vec2 pa = p - a, ba = b - a;
                 float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
                 return length(pa - ba * h) - r;
             }
 
-            // Shape generation & normal calculation
+            // Calculate shape and extract 2D normals
             float getGlassShape(vec2 uv, vec2 mousePos, float aspect, out vec2 normal2D) {
                 vec2 p = uv;
                 p.x *= aspect;
@@ -233,8 +545,8 @@
                 float width = 0.22;
                 float radius = 0.12;
                 
-                // Velocity-based deformation (squash/stretch)
-                vec2 deformation = u_velocity * 0.05;
+                // Add physical deformation based on movement velocity
+                vec2 deformation = u_velocity * 0.08;
                 vec2 a = m - vec2(width, 0.0) - deformation;
                 vec2 b = m + vec2(width, 0.0) + deformation;
                 
@@ -248,7 +560,6 @@
                 return d;
             }
 
-            // Background with dynamic uniform colors
             vec3 renderBackground(vec2 uv) {
                 float split = step(0.5, uv.y);
                 return mix(u_colorTop, u_colorBot, split);
@@ -257,7 +568,6 @@
             void main() {
                 float aspect = u_resolution.x / u_resolution.y;
                 vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-                
                 vec2 mouse = u_mouse.xy / u_resolution.xy;
                 mouse.y = 1.0 - mouse.y;
 
@@ -265,43 +575,51 @@
                 float dist = getGlassShape(uv, mouse, aspect, normal2D);
 
                 vec3 finalColor;
-
-                // Screen-space antialiasing
                 float pixelSize = 1.0 / u_resolution.y;
                 float aa = smoothstep(pixelSize * 1.5, -pixelSize * 1.5, dist);
 
-                if (dist <= 0.01) { 
+                if (dist <= 0.02) { 
                     
-                    // --- OPTICAL REFRACTION ---
+                    // Base Physical Refraction Depth
                     float depth = smoothstep(0.0, -0.15, dist);
-                    vec2 refractionOffset = normal2D * depth * 0.08;
+                    
+                    // HD Toggle increases the index of refraction
+                    float ior = mix(0.04, 0.12, u_hdActive);
+                    vec2 refractionOffset = normal2D * depth * ior;
                     vec2 refractedUV = uv - refractionOffset;
                     
-                    // --- CHROMATIC ABERRATION ---
-                    float dispersion = 0.008 * depth;
-                    float r = renderBackground(refractedUV + normal2D * dispersion).r;
-                    float g = renderBackground(refractedUV).g;
-                    float b = renderBackground(refractedUV - normal2D * dispersion).b;
-                    vec3 glassColor = vec3(r, g, b);
+                    vec3 glassColor;
+                    
+                    // Chromatic Aberration Dispersion Logic
+                    if(u_chromaActive > 0.5) {
+                        float dispersion = 0.012 * depth;
+                        float r = renderBackground(refractedUV + normal2D * dispersion).r;
+                        float g = renderBackground(refractedUV).g;
+                        float b = renderBackground(refractedUV - normal2D * dispersion).b;
+                        glassColor = vec3(r, g, b);
+                    } else {
+                        glassColor = renderBackground(refractedUV);
+                    }
 
-                    // --- LIGHTING & SHADING ---
-                    vec3 normal3D = normalize(vec3(normal2D.x, normal2D.y, depth * 3.0));
+                    // 3D Lighting Reconstruction
+                    vec3 normal3D = normalize(vec3(normal2D.x, normal2D.y, depth * 2.5));
                     vec3 viewDir = vec3(0.0, 0.0, 1.0);
                     vec3 lightDir = normalize(vec3(0.0, -1.0, 0.8)); 
                     
-                    // Interior Shadow
-                    float edgeShadow = smoothstep(0.0, -0.04, dist);
-                    glassColor = mix(glassColor * 0.65, glassColor, edgeShadow);
+                    // Ambient Occlusion / Edge Shadow
+                    float edgeShadow = smoothstep(0.0, -0.05, dist);
+                    glassColor = mix(glassColor * 0.5, glassColor, edgeShadow);
 
                     // Specular Highlight
                     vec3 halfVec = normalize(lightDir + viewDir);
-                    float specular = pow(max(dot(normal3D, halfVec), 0.0), 60.0) * 0.8;
+                    float specPower = mix(30.0, 80.0, u_hdActive);
+                    float specular = pow(max(dot(normal3D, halfVec), 0.0), specPower) * 1.2;
 
-                    // Fresnel Edge Glow
+                    // Fresnel Rim
                     float fresnel = pow(1.0 - max(dot(normal3D, viewDir), 0.0), 3.0);
-                    vec3 edgeGlow = vec3(1.0) * fresnel * 0.3;
+                    vec3 edgeGlow = vec3(1.0) * fresnel * mix(0.2, 0.5, u_hdActive);
 
-                    // White Rim Stroke
+                    // Stroke
                     float rimStroke = smoothstep(-0.002, 0.0, dist) - smoothstep(0.0, 0.002, dist);
 
                     vec3 opticalResult = glassColor + specular + edgeGlow + (vec3(1.0) * rimStroke * 0.8);
@@ -313,53 +631,55 @@
                     finalColor = renderBackground(uv);
                 }
 
+                // Cinematic Grain Toggle
+                if(u_grainActive > 0.5) {
+                    float noise = hash(uv * u_time) * 2.0 - 1.0;
+                    finalColor += noise * 0.015;
+                }
+
                 outColor = vec4(finalColor, 1.0);
             }
         `;
 
-        // ============================================================================
-        // WEBGL ENGINE BOILERPLATE
-        // ============================================================================
-        function createShader(gl, type, source) {
-            const shader = gl.createShader(type);
-            gl.shaderSource(shader, source);
-            gl.compileShader(shader);
-            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                console.error('Shader error:', gl.getShaderInfoLog(shader));
-                gl.deleteShader(shader);
-                return null;
-            }
-            return shader;
+        // Compile Shader Helper
+        function compile(gl, type, src) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, src);
+            gl.compileShader(s);
+            if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
+            return s;
         }
 
-        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
-        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+        const prog = gl.createProgram();
+        gl.attachShader(prog, compile(gl, gl.VERTEX_SHADER, vsSource));
+        gl.attachShader(prog, compile(gl, gl.FRAGMENT_SHADER, fsSource));
+        gl.linkProgram(prog);
 
-        const program = gl.createProgram();
-        gl.attachShader(program, vertexShader);
-        gl.attachShader(program, fragmentShader);
-        gl.linkProgram(program);
-
-        const positionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        const positions = [-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1];
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
 
         const vao = gl.createVertexArray();
         gl.bindVertexArray(vao);
-        const posLoc = gl.getAttribLocation(program, "a_position");
-        gl.enableVertexAttribArray(posLoc);
-        gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+        const aPos = gl.getAttribLocation(prog, "a_position");
+        gl.enableVertexAttribArray(aPos);
+        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-        // Uniforms
-        const uRes = gl.getUniformLocation(program, "u_resolution");
-        const uMouse = gl.getUniformLocation(program, "u_mouse");
-        const uVel = gl.getUniformLocation(program, "u_velocity");
-        const uColTop = gl.getUniformLocation(program, "u_colorTop");
-        const uColBot = gl.getUniformLocation(program, "u_colorBot");
+        // Uniform Locations
+        const locs = {
+            res: gl.getUniformLocation(prog, "u_resolution"),
+            mouse: gl.getUniformLocation(prog, "u_mouse"),
+            vel: gl.getUniformLocation(prog, "u_velocity"),
+            topC: gl.getUniformLocation(prog, "u_colorTop"),
+            botC: gl.getUniformLocation(prog, "u_colorBot"),
+            chroma: gl.getUniformLocation(prog, "u_chromaActive"),
+            hd: gl.getUniformLocation(prog, "u_hdActive"),
+            grain: gl.getUniformLocation(prog, "u_grainActive"),
+            time: gl.getUniformLocation(prog, "u_time")
+        };
 
         // ============================================================================
-        // INTERACTION & PHYSICS LOOP
+        // 5. PHYSICS, INPUT & RENDER LOOP
         // ============================================================================
         let mouseX = window.innerWidth / 2;
         let mouseY = window.innerHeight / 2;
@@ -368,53 +688,64 @@
         let velX = 0;
         let velY = 0;
 
-        window.addEventListener('mousemove', (e) => { targetX = e.clientX; targetY = e.clientY; });
-        window.addEventListener('touchmove', (e) => { targetX = e.touches[0].clientX; targetY = e.touches[0].clientY; }, { passive: true });
+        window.addEventListener('mousemove', (e) => { 
+            if(!isAutopilot) { targetX = e.clientX; targetY = e.clientY; }
+        });
 
-        function resizeCanvas() {
+        function resize() {
             const dpr = Math.min(window.devicePixelRatio, 2);
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
-                canvas.width = w * dpr;
-                canvas.height = h * dpr;
+            if (canvas.width !== window.innerWidth * dpr || canvas.height !== window.innerHeight * dpr) {
+                canvas.width = window.innerWidth * dpr;
+                canvas.height = window.innerHeight * dpr;
                 gl.viewport(0, 0, canvas.width, canvas.height);
             }
         }
 
-        // Linear interpolation function for smooth color transitions
-        function lerpColor(curr, target, factor) {
-            curr[0] += (target[0] - curr[0]) * factor;
-            curr[1] += (target[1] - curr[1]) * factor;
-            curr[2] += (target[2] - curr[2]) * factor;
-        }
+        function render(now) {
+            resize();
 
-        function render() {
-            resizeCanvas();
+            // Lerp Colors
+            for(let i=0; i<3; i++) {
+                currentColorTop[i] += (targetColorTop[i] - currentColorTop[i]) * 0.08;
+                currentColorBot[i] += (targetColorBot[i] - currentColorBot[i]) * 0.08;
+            }
 
-            // Smooth Color Transitions
-            lerpColor(currentColorTop, targetColorTop, 0.08);
-            lerpColor(currentColorBot, targetColorBot, 0.08);
+            // Autopilot Physics (Lissajous curve)
+            if(isAutopilot) {
+                const t = now * 0.001;
+                targetX = window.innerWidth/2 + Math.sin(t * 1.5) * (window.innerWidth * 0.3);
+                targetY = window.innerHeight/2 + Math.cos(t * 2.1) * (window.innerHeight * 0.3);
+                
+                // Hide cursor in autopilot
+                cursor.style.opacity = 0;
+            } else {
+                cursor.style.opacity = 1;
+            }
 
-            // Spring Physics for Mouse & Glass velocity
+            // Spring Physics for Glass Viscosity & Deformation
             const dx = targetX - mouseX;
             const dy = targetY - mouseY;
-            velX = dx * 0.15;
-            velY = dy * 0.15;
+            velX = dx * 0.12;
+            velY = dy * 0.12;
             mouseX += velX;
             mouseY += velY;
 
-            gl.useProgram(program);
+            // Draw
+            gl.useProgram(prog);
             gl.bindVertexArray(vao);
 
-            gl.uniform2f(uRes, canvas.width, canvas.height);
-            
             const dpr = Math.min(window.devicePixelRatio, 2);
-            gl.uniform2f(uMouse, mouseX * dpr, mouseY * dpr);
-            gl.uniform2f(uVel, velX / window.innerWidth, velY / window.innerHeight);
+            gl.uniform2f(locs.res, canvas.width, canvas.height);
+            gl.uniform2f(locs.mouse, mouseX * dpr, mouseY * dpr);
+            gl.uniform2f(locs.vel, velX / window.innerWidth, velY / window.innerHeight);
             
-            gl.uniform3fv(uColTop, currentColorTop);
-            gl.uniform3fv(uColBot, currentColorBot);
+            gl.uniform3fv(locs.topC, currentColorTop);
+            gl.uniform3fv(locs.botC, currentColorBot);
+            
+            gl.uniform1f(locs.chroma, chromaEnabled ? 1.0 : 0.0);
+            gl.uniform1f(locs.hd, hdEnabled ? 1.0 : 0.0);
+            gl.uniform1f(locs.grain, grainEnabled ? 1.0 : 0.0);
+            gl.uniform1f(locs.time, now * 0.001);
 
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             requestAnimationFrame(render);
