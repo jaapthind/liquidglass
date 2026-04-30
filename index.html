@@ -2,48 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Liquid Glass Lens OS - Ultimate Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Liquid Glass Lens - 30 Colors Edition</title>
     <style>
-        /* ==========================================================================
-           CORE STYLES & VARIABLES
-           ========================================================================== */
         :root {
-            --ui-bg: rgba(15, 15, 18, 0.6);
-            --ui-border: rgba(255, 255, 255, 0.1);
-            --ui-blur: 24px;
-            --text-main: #ffffff;
-            --text-dim: rgba(255, 255, 255, 0.5);
-            --accent: #00ffcc;
-            --accent-hover: #00e5b7;
-            --panel-width: 320px;
-            --transition-speed: 0.4s;
-            --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --bg-dark: #0a0a0c;
         }
-
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             user-select: none;
             -webkit-user-drag: none;
-            -webkit-tap-highlight-color: transparent;
         }
 
         body, html {
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            background-color: #000;
-            font-family: var(--font-stack);
-            color: var(--text-main);
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            background-color: var(--bg-dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        /* ==========================================================================
-           WEBGL CANVAS
-           ========================================================================== */
         #webgl-canvas {
             position: absolute;
             top: 0;
@@ -55,593 +36,160 @@
             cursor: crosshair;
         }
 
-        /* ==========================================================================
-           GLASSMORPHISM UI PANEL
-           ========================================================================== */
-        #ui-panel {
+        /* 30 Colors Simple UI Overlay */
+        #color-picker-container {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(15, 15, 20, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 15px 25px;
+            display: flex;
+            gap: 10px;
+            max-width: 90vw;
+            overflow-x: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        /* Hide Scrollbar but keep functionality */
+        #color-picker-container::-webkit-scrollbar {
+            display: none;
+        }
+        #color-picker-container {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .color-dot {
+            flex: 0 0 auto;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .color-dot:hover {
+            transform: translateY(-5px) scale(1.2);
+            border-color: rgba(255, 255, 255, 0.8);
+            z-index: 2;
+        }
+
+        .color-dot.active {
+            transform: translateY(-5px) scale(1.3);
+            border-color: #ffffff;
+            box-shadow: 0 8px 20px rgba(255,255,255,0.3);
+        }
+
+        #ui-label {
             position: absolute;
             top: 20px;
-            right: 20px;
-            width: var(--panel-width);
-            max-height: calc(100vh - 40px);
-            background: var(--ui-bg);
-            backdrop-filter: blur(var(--ui-blur));
-            -webkit-backdrop-filter: blur(var(--ui-blur));
-            border: 1px solid var(--ui-border);
-            border-radius: 20px;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-            transition: transform var(--transition-speed) cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        #ui-panel.hidden {
-            transform: translateX(calc(100% + 40px));
-        }
-
-        /* Header */
-        .panel-header {
-            padding: 24px;
-            border-bottom: 1px solid var(--ui-border);
-            position: relative;
-            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
-        }
-
-        .panel-title {
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-            background: linear-gradient(90deg, #fff, #aaa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .panel-subtitle {
-            font-size: 11px;
-            color: var(--text-dim);
-            font-family: monospace;
-            letter-spacing: 0.5px;
-        }
-
-        /* Scrollable Content */
-        .panel-content {
-            padding: 24px;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-
-        .panel-content::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .panel-content::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .panel-content::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.2);
-            border-radius: 4px;
-        }
-
-        /* Section Titles */
-        .section-title {
-            font-size: 10px;
-            font-weight: 800;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-        }
-
-        .section-title::after {
-            content: '';
-            flex-grow: 1;
-            height: 1px;
-            background: var(--ui-border);
-            margin-left: 12px;
-        }
-
-        /* ==========================================================================
-           COLOR GRID (20 VIBRANT GRADIENTS)
-           ========================================================================== */
-        .color-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin-bottom: 32px;
-        }
-
-        .color-btn {
-            aspect-ratio: 1;
-            border-radius: 50%;
-            border: 2px solid transparent;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        .color-btn::after {
-            content: '';
-            position: absolute;
-            top: -6px;
-            left: -6px;
-            right: -6px;
-            bottom: -6px;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.4);
-            opacity: 0;
-            transform: scale(0.8);
-            transition: all 0.3s ease;
-        }
-
-        .color-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-            z-index: 2;
-        }
-
-        .color-btn.active {
-            transform: scale(1.15);
-            border-color: #fff;
-        }
-
-        .color-btn.active::after {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        /* Tooltip */
-        .color-btn .tooltip {
-            position: absolute;
-            bottom: 130%;
-            left: 50%;
-            transform: translateX(-50%) translateY(10px);
-            background: rgba(0,0,0,0.8);
-            color: #fff;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.2s ease;
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        .color-btn:hover .tooltip {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* ==========================================================================
-           CONTROLS & SLIDERS
-           ========================================================================== */
-        .control-group {
-            margin-bottom: 24px;
-        }
-
-        .control-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-
-        .control-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: #fff;
-        }
-
-        .control-value {
-            font-size: 12px;
-            font-family: monospace;
-            color: var(--accent);
-        }
-
-        .slider-container {
-            position: relative;
-            width: 100%;
-            height: 24px;
-            display: flex;
-            align-items: center;
-        }
-
-        .slider-track {
-            position: absolute;
-            width: 100%;
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .slider-fill {
-            position: absolute;
-            height: 100%;
-            background: var(--accent);
-            width: 50%;
-            border-radius: 2px;
-            box-shadow: 0 0 10px var(--accent);
-        }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent;
-            position: absolute;
-            z-index: 2;
-            cursor: pointer;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 16px;
-            width: 16px;
-            border-radius: 50%;
-            background: #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            transition: transform 0.1s;
-        }
-
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
-
-        input[type="range"]:focus {
-            outline: none;
-        }
-
-        /* Toggle Switches */
-        .toggle-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 44px;
-            height: 24px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .toggle-switch.active {
-            background: var(--accent);
-        }
-
-        .toggle-knob {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            background: #fff;
-            border-radius: 50%;
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .toggle-switch.active .toggle-knob {
-            transform: translateX(20px);
-        }
-
-        /* ==========================================================================
-           PERFORMANCE HUD & DIAGNOSTICS
-           ========================================================================== */
-        #hud {
-            position: absolute;
-            bottom: 20px;
             left: 20px;
             z-index: 10;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            letter-spacing: 3px;
             pointer-events: none;
-            display: flex;
-            gap: 20px;
+            font-weight: 600;
         }
-
-        .hud-module {
-            background: var(--ui-bg);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--ui-border);
-            padding: 12px 16px;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            min-width: 100px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .hud-label {
-            font-size: 9px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-
-        .hud-value {
-            font-size: 18px;
-            font-weight: 700;
-            font-family: monospace;
-            color: #fff;
-        }
-
-        .hud-value span {
-            font-size: 10px;
-            color: var(--accent);
-            margin-left: 4px;
-        }
-
-        /* Hide UI Button */
-        #toggle-ui-btn {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 20;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--ui-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--ui-border);
-            color: #fff;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.2s ease;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        }
-
-        #toggle-ui-btn:hover {
-            background: rgba(255,255,255,0.1);
-            transform: scale(1.05);
-        }
-
-        #toggle-ui-btn svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-            transition: transform 0.4s ease;
-        }
-
-        #toggle-ui-btn.ui-hidden svg {
-            transform: rotate(180deg);
-        }
-
     </style>
 </head>
 <body>
 
+    <div id="ui-label">LIQUID GLASS OPTICS // 30 COLOR ENGINE</div>
+    <div id="color-picker-container"></div>
     <canvas id="webgl-canvas"></canvas>
-
-    <div id="hud">
-        <div class="hud-module">
-            <div class="hud-label">ENGINE FPS</div>
-            <div class="hud-value" id="fps-counter">60<span>FPS</span></div>
-        </div>
-        <div class="hud-module">
-            <div class="hud-label">RESOLUTION</div>
-            <div class="hud-value" id="res-counter">HD<span>PX</span></div>
-        </div>
-    </div>
-
-    <div id="ui-panel">
-        <div class="panel-header">
-            <div class="panel-title">Liquid Glass OS</div>
-            <div class="panel-subtitle">Neural Optics v4.0.0</div>
-        </div>
-        
-        <div class="panel-content">
-            
-            <div class="section-title">Environment Tints (20)</div>
-            <div class="color-grid" id="color-grid">
-                </div>
-
-            <div class="section-title">Optical Physics</div>
-            
-            <div class="control-group">
-                <div class="control-header">
-                    <div class="control-label">Refractive Index (IOR)</div>
-                    <div class="control-value" id="val-ior">1.08</div>
-                </div>
-                <div class="slider-container">
-                    <div class="slider-track"><div class="slider-fill" id="fill-ior" style="width: 40%;"></div></div>
-                    <input type="range" id="slider-ior" min="1.0" max="1.2" step="0.001" value="1.08">
-                </div>
-            </div>
-
-            <div class="control-group">
-                <div class="control-header">
-                    <div class="control-label">Chromatic Aberration</div>
-                    <div class="control-value" id="val-chroma">0.020</div>
-                </div>
-                <div class="slider-container">
-                    <div class="slider-track"><div class="slider-fill" id="fill-chroma" style="width: 40%;"></div></div>
-                    <input type="range" id="slider-chroma" min="0.0" max="0.05" step="0.001" value="0.020">
-                </div>
-            </div>
-
-            <div class="control-group">
-                <div class="control-header">
-                    <div class="control-label">Lens Thickness</div>
-                    <div class="control-value" id="val-thick">0.25</div>
-                </div>
-                <div class="slider-container">
-                    <div class="slider-track"><div class="slider-fill" id="fill-thick" style="width: 50%;"></div></div>
-                    <input type="range" id="slider-thick" min="0.1" max="0.4" step="0.01" value="0.25">
-                </div>
-            </div>
-
-            <div class="control-group">
-                <div class="control-header">
-                    <div class="control-label">Liquid Viscosity (Drag)</div>
-                    <div class="control-value" id="val-drag">0.12</div>
-                </div>
-                <div class="slider-container">
-                    <div class="slider-track"><div class="slider-fill" id="fill-drag" style="width: 60%;"></div></div>
-                    <input type="range" id="slider-drag" min="0.02" max="0.2" step="0.01" value="0.12">
-                </div>
-            </div>
-
-            <div class="section-title">Rendering Features</div>
-
-            <div class="toggle-row">
-                <div class="control-label">Cinematic Film Grain</div>
-                <div class="toggle-switch active" id="toggle-grain">
-                    <div class="toggle-knob"></div>
-                </div>
-            </div>
-
-            <div class="toggle-row">
-                <div class="control-label">Dynamic Velocity Deformation</div>
-                <div class="toggle-switch active" id="toggle-deform">
-                    <div class="toggle-knob"></div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <button id="toggle-ui-btn" aria-label="Toggle UI">
-        <svg viewBox="0 0 24 24">
-            <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
-        </svg>
-    </button>
 
     <script>
         // ============================================================================
-        // 1. DATA: 20 VIBRANT GRADIENT PRESETS
+        // 30 VIBRANT SPLIT-BACKGROUND COLOR PALETTES (RGB 0.0 - 1.0)
         // ============================================================================
-        // Colors defined as top color, bottom color, name
-        const GRADIENTS = [
-            { name: "Reference Gray", top: [0.86, 0.89, 0.93], bot: [0.20, 0.22, 0.25], hex: "linear-gradient(135deg, #dbe3ed, #333840)" },
-            { name: "Midnight Neon", top: [0.10, 0.00, 0.30], bot: [0.00, 1.00, 0.80], hex: "linear-gradient(135deg, #19004d, #00ffcc)" },
-            { name: "Berkeley Gold", top: [1.00, 0.70, 0.10], bot: [0.00, 0.20, 0.40], hex: "linear-gradient(135deg, #ffb31a, #003366)" },
-            { name: "Action Green", top: [0.00, 0.13, 0.28], bot: [0.41, 1.00, 0.12], hex: "linear-gradient(135deg, #002247, #69ff1f)" },
-            { name: "Cyberpunk", top: [1.00, 0.00, 0.40], bot: [1.00, 0.80, 0.00], hex: "linear-gradient(135deg, #ff0066, #ffcc00)" },
-            { name: "Ocean Breeze", top: [0.00, 0.80, 1.00], bot: [0.00, 0.20, 0.60], hex: "linear-gradient(135deg, #00ccff, #003399)" },
-            { name: "Cherry Blossom", top: [1.00, 0.80, 0.85], bot: [0.90, 0.30, 0.50], hex: "linear-gradient(135deg, #ffccd9, #e64d80)" },
-            { name: "Lava Flow", top: [0.80, 0.00, 0.00], bot: [1.00, 0.40, 0.00], hex: "linear-gradient(135deg, #cc0000, #ff6600)" },
-            { name: "Forest Canopy", top: [0.05, 0.40, 0.10], bot: [0.60, 1.00, 0.20], hex: "linear-gradient(135deg, #0d661a, #99ff33)" },
-            { name: "Amethyst", top: [0.40, 0.00, 0.60], bot: [0.80, 0.60, 1.00], hex: "linear-gradient(135deg, #660099, #cc99ff)" },
-            { name: "Crimson Night", top: [0.05, 0.00, 0.00], bot: [0.90, 0.00, 0.20], hex: "linear-gradient(135deg, #0d0000, #e60033)" },
-            { name: "Synthwave", top: [1.00, 0.00, 0.80], bot: [0.20, 0.00, 0.60], hex: "linear-gradient(135deg, #ff00cc, #330099)" },
-            { name: "Solar Flare", top: [1.00, 0.90, 0.00], bot: [1.00, 0.20, 0.00], hex: "linear-gradient(135deg, #ffe600, #ff3300)" },
-            { name: "Arctic Ice", top: [0.80, 1.00, 1.00], bot: [0.00, 0.60, 0.80], hex: "linear-gradient(135deg, #ccffff, #0099cc)" },
-            { name: "Nebula", top: [0.20, 0.00, 0.40], bot: [0.80, 0.00, 0.60], hex: "linear-gradient(135deg, #330066, #cc0099)" },
-            { name: "Toxic Sludge", top: [0.20, 0.20, 0.20], bot: [0.40, 1.00, 0.00], hex: "linear-gradient(135deg, #333333, #66ff00)" },
-            { name: "Royal Gold", top: [0.10, 0.10, 0.10], bot: [0.80, 0.60, 0.20], hex: "linear-gradient(135deg, #1a1a1a, #cc9933)" },
-            { name: "Peachy", top: [1.00, 0.90, 0.70], bot: [1.00, 0.40, 0.40], hex: "linear-gradient(135deg, #ffe6b3, #ff6666)" },
-            { name: "Deep Space", top: [0.00, 0.00, 0.00], bot: [0.00, 0.10, 0.30], hex: "linear-gradient(135deg, #000000, #001a4d)" },
-            { name: "Holographic", top: [0.80, 0.90, 1.00], bot: [1.00, 0.80, 0.90], hex: "linear-gradient(135deg, #cce6ff, #ffccf2)" }
+        const PALETTES = [
+            { top: [0.86, 0.89, 0.93], bot: [0.20, 0.22, 0.25] }, // 1. Classic Glass (Reference)
+            { top: [0.10, 0.00, 0.30], bot: [0.00, 1.00, 0.80] }, // 2. Midnight Neon
+            { top: [1.00, 0.70, 0.10], bot: [0.00, 0.20, 0.40] }, // 3. Berkeley Gold
+            { top: [0.00, 0.13, 0.28], bot: [0.41, 1.00, 0.12] }, // 4. Action Green
+            { top: [1.00, 0.00, 0.40], bot: [1.00, 0.80, 0.00] }, // 5. Cyberpunk
+            { top: [0.00, 0.80, 1.00], bot: [0.00, 0.20, 0.60] }, // 6. Ocean Breeze
+            { top: [1.00, 0.80, 0.85], bot: [0.90, 0.30, 0.50] }, // 7. Cherry Blossom
+            { top: [0.80, 0.00, 0.00], bot: [1.00, 0.40, 0.00] }, // 8. Lava Flow
+            { top: [0.05, 0.40, 0.10], bot: [0.60, 1.00, 0.20] }, // 9. Toxic Sludge
+            { top: [0.40, 0.00, 0.60], bot: [0.80, 0.60, 1.00] }, // 10. Amethyst
+            { top: [0.05, 0.00, 0.00], bot: [0.90, 0.00, 0.20] }, // 11. Crimson Night
+            { top: [1.00, 0.00, 0.80], bot: [0.20, 0.00, 0.60] }, // 12. Synthwave
+            { top: [1.00, 0.90, 0.00], bot: [1.00, 0.20, 0.00] }, // 13. Solar Flare
+            { top: [0.80, 1.00, 1.00], bot: [0.00, 0.60, 0.80] }, // 14. Arctic Ice
+            { top: [0.10, 0.10, 0.10], bot: [0.80, 0.60, 0.20] }, // 15. Royal Gold
+            { top: [1.00, 0.90, 0.70], bot: [1.00, 0.40, 0.40] }, // 16. Peach
+            { top: [0.00, 0.00, 0.00], bot: [0.00, 0.10, 0.30] }, // 17. Deep Space
+            { top: [0.80, 0.90, 1.00], bot: [1.00, 0.80, 0.90] }, // 18. Holographic
+            { top: [0.10, 0.80, 0.40], bot: [0.00, 0.30, 0.10] }, // 19. Emerald City
+            { top: [0.60, 0.40, 0.20], bot: [0.20, 0.10, 0.00] }, // 20. Espresso
+            { top: [0.20, 0.00, 0.40], bot: [0.80, 0.00, 0.60] }, // 21. Nebula
+            { top: [0.90, 0.90, 0.90], bot: [0.10, 0.10, 0.10] }, // 22. Pure Mono
+            { top: [1.00, 0.40, 0.80], bot: [0.40, 0.00, 0.20] }, // 23. Bubblegum
+            { top: [0.20, 0.60, 1.00], bot: [0.00, 0.00, 0.40] }, // 24. Deep Dive
+            { top: [1.00, 1.00, 1.00], bot: [0.00, 0.80, 1.00] }, // 25. Cloud Nine
+            { top: [0.50, 1.00, 0.00], bot: [0.00, 0.40, 0.00] }, // 26. Matrix
+            { top: [1.00, 0.20, 0.20], bot: [0.20, 0.00, 0.00] }, // 27. Blood Moon
+            { top: [0.00, 0.50, 0.50], bot: [0.00, 0.10, 0.10] }, // 28. Teal Abyss
+            { top: [0.90, 0.80, 1.00], bot: [0.40, 0.20, 0.60] }, // 29. Lavender
+            { top: [1.00, 0.60, 0.00], bot: [0.40, 0.00, 0.80] }  // 30. Sunset Void
         ];
 
-        let currentColorTop = [...GRADIENTS[0].top];
-        let currentColorBot = [...GRADIENTS[0].bot];
-        let targetColorTop = [...GRADIENTS[0].top];
-        let targetColorBot = [...GRADIENTS[0].bot];
+        let targetColorTop = [...PALETTES[0].top];
+        let targetColorBot = [...PALETTES[0].bot];
+        let currentColorTop = [...PALETTES[0].top];
+        let currentColorBot = [...PALETTES[0].bot];
 
         // ============================================================================
-        // 2. UI & DOM MANIPULATION
+        // UI SETUP
         // ============================================================================
-        const colorGrid = document.getElementById('color-grid');
-        let activeColorIndex = 0;
-
-        // Generate Color Buttons
-        GRADIENTS.forEach((grad, index) => {
-            const btn = document.createElement('div');
-            btn.className = `color-btn ${index === 0 ? 'active' : ''}`;
-            btn.style.background = grad.hex;
-            
-            const tooltip = document.createElement('div');
-            tooltip.className = 'tooltip';
-            tooltip.innerText = grad.name;
-            btn.appendChild(tooltip);
-
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                targetColorTop = [...grad.top];
-                targetColorBot = [...grad.bot];
-                activeColorIndex = index;
-            });
-
-            colorGrid.appendChild(btn);
-        });
-
-        // Sliders Logic
-        const settings = {
-            ior: 1.08,
-            chroma: 0.020,
-            thickness: 0.25,
-            drag: 0.12,
-            grain: 1.0,
-            deform: 1.0
-        };
-
-        function setupSlider(id, key, formatFn, percentFn) {
-            const slider = document.getElementById(`slider-${id}`);
-            const valDisplay = document.getElementById(`val-${id}`);
-            const fill = document.getElementById(`fill-${id}`);
-
-            slider.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                settings[key] = val;
-                valDisplay.innerText = formatFn(val);
-                fill.style.width = percentFn(val, slider.min, slider.max) + '%';
-            });
+        const pickerContainer = document.getElementById('color-picker-container');
+        
+        // Helper to convert normalized RGB float array to CSS rgb string
+        function toCSS(arr) {
+            return `rgb(${Math.round(arr[0]*255)}, ${Math.round(arr[1]*255)}, ${Math.round(arr[2]*255)})`;
         }
 
-        const getPercent = (v, min, max) => ((v - min) / (max - min)) * 100;
+        PALETTES.forEach((palette, index) => {
+            const dot = document.createElement('div');
+            dot.className = `color-dot ${index === 0 ? 'active' : ''}`;
+            
+            // Create a diagonal gradient CSS background to preview the split
+            const cTop = toCSS(palette.top);
+            const cBot = toCSS(palette.bot);
+            dot.style.background = `linear-gradient(135deg, ${cTop} 0%, ${cTop} 50%, ${cBot} 50%, ${cBot} 100%)`;
 
-        setupSlider('ior', 'ior', v => v.toFixed(3), getPercent);
-        setupSlider('chroma', 'chroma', v => v.toFixed(3), getPercent);
-        setupSlider('thick', 'thickness', v => v.toFixed(2), getPercent);
-        setupSlider('drag', 'drag', v => v.toFixed(2), getPercent);
+            dot.addEventListener('click', () => {
+                document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+                dot.classList.add('active');
+                targetColorTop = [...palette.top];
+                targetColorBot = [...palette.bot];
+            });
 
-        // Toggles
-        document.getElementById('toggle-grain').addEventListener('click', function() {
-            this.classList.toggle('active');
-            settings.grain = this.classList.contains('active') ? 1.0 : 0.0;
-        });
-
-        document.getElementById('toggle-deform').addEventListener('click', function() {
-            this.classList.toggle('active');
-            settings.deform = this.classList.contains('active') ? 1.0 : 0.0;
-        });
-
-        // Panel Toggle
-        const uiPanel = document.getElementById('ui-panel');
-        const toggleBtn = document.getElementById('toggle-ui-btn');
-        toggleBtn.addEventListener('click', () => {
-            uiPanel.classList.toggle('hidden');
-            toggleBtn.classList.toggle('ui-hidden');
+            pickerContainer.appendChild(dot);
         });
 
         // ============================================================================
-        // 3. WEBGL ENGINE SETUP
+        // WEBGL ENGINE SETUP (REVERTED TO STABLE V3 BASE + UNIFORM COLORS)
         // ============================================================================
         const canvas = document.getElementById('webgl-canvas');
-        const gl = canvas.getContext('webgl2', { antialias: true, alpha: false, powerPreference: "high-performance" });
+        const gl = canvas.getContext('webgl2', { 
+            antialias: true, 
+            alpha: false, 
+            powerPreference: "high-performance" 
+        });
 
         if (!gl) {
-            alert("Fatal Error: WebGL 2.0 is not supported by your browser or hardware.");
-            throw new Error("WebGL 2.0 required.");
+            document.body.innerHTML = '<h1 style="color:white;text-align:center;margin-top:20vh;">WebGL 2.0 Required</h1>';
         }
 
         // --- VERTEX SHADER ---
@@ -655,86 +203,61 @@
             }
         `;
 
-        // --- MASSIVE, HIGHLY DETAILED FRAGMENT SHADER ---
+        // --- FRAGMENT SHADER (STABLE OPTICAL PHYSICS) ---
         const fsSource = `#version 300 es
             precision highp float;
 
             in vec2 v_uv;
             out vec4 outColor;
 
-            // Uniforms
             uniform vec2 u_resolution;
             uniform vec2 u_mouse;
             uniform vec2 u_velocity;
-            uniform float u_time;
-            
-            // Dynamics Uniforms
             uniform vec3 u_colorTop;
             uniform vec3 u_colorBot;
-            uniform float u_ior;
-            uniform float u_chroma;
-            uniform float u_thickness;
-            uniform float u_useGrain;
-            uniform float u_useDeform;
 
-            // --- MATH & SDF FUNCTIONS ---
-            
-            // Random hash for film grain
-            float hash12(vec2 p) {
-                vec3 p3  = fract(vec3(p.xyx) * .1031);
-                p3 += dot(p3, p3.yzx + 33.33);
-                return fract((p3.x + p3.y) * p3.z);
-            }
-
-            // Exact SDF for a perfectly rounded Pill/Capsule shape
+            // SDF for a Pill/Capsule shape
             float sdCapsule(vec2 p, vec2 a, vec2 b, float r) {
                 vec2 pa = p - a, ba = b - a;
                 float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
                 return length(pa - ba * h) - r;
             }
 
-            // Calculates the shape and returns the 2D normal vector at that pixel
+            // Shape generation & normal calculation
             float getGlassShape(vec2 uv, vec2 mousePos, float aspect, out vec2 normal2D) {
                 vec2 p = uv;
                 p.x *= aspect;
                 vec2 m = mousePos;
                 m.x *= aspect;
 
-                // Base dimensions scaled by the thickness uniform
-                float width = u_thickness * 0.88;
-                float radius = u_thickness * 0.48;
+                float width = 0.22;
+                float radius = 0.12;
                 
-                // Velocity Deformation (Squash & Stretch)
-                // If moving fast, stretch the pill in the direction of velocity
-                vec2 deformation = u_velocity * 0.08 * u_useDeform;
-                
+                // Velocity-based deformation (squash/stretch)
+                vec2 deformation = u_velocity * 0.05;
                 vec2 a = m - vec2(width, 0.0) - deformation;
                 vec2 b = m + vec2(width, 0.0) + deformation;
                 
                 float d = sdCapsule(p, a, b, radius);
 
-                // Compute exact 2D normal via central differences
                 vec2 e = vec2(0.001, 0.0);
-                float nx = sdCapsule(p + e.xy, a, b, radius) - sdCapsule(p - e.xy, a, b, radius);
-                float ny = sdCapsule(p + e.yx, a, b, radius) - sdCapsule(p - e.yx, a, b, radius);
+                float nx = sdCapsule(p + e.xy, a, b, radius) - d;
+                float ny = sdCapsule(p + e.yx, a, b, radius) - d;
                 normal2D = normalize(vec2(nx, ny));
 
                 return d;
             }
 
-            // Render the split background
+            // Background with dynamic uniform colors
             vec3 renderBackground(vec2 uv) {
-                // Razor sharp split exactly in the vertical middle
                 float split = step(0.5, uv.y);
                 return mix(u_colorTop, u_colorBot, split);
             }
 
-            // --- MAIN RENDER LOOP ---
             void main() {
                 float aspect = u_resolution.x / u_resolution.y;
                 vec2 uv = gl_FragCoord.xy / u_resolution.xy;
                 
-                // Map mouse coordinates to WebGL space
                 vec2 mouse = u_mouse.xy / u_resolution.xy;
                 mouse.y = 1.0 - mouse.y;
 
@@ -743,115 +266,83 @@
 
                 vec3 finalColor;
 
-                // Advanced Anti-Aliasing (fwidth equivalent)
+                // Screen-space antialiasing
                 float pixelSize = 1.0 / u_resolution.y;
                 float aa = smoothstep(pixelSize * 1.5, -pixelSize * 1.5, dist);
 
-                if (dist <= 0.02) { 
-                    // Inside the Glass Lens
+                if (dist <= 0.01) { 
                     
-                    // 1. Physical Depth Mapping
-                    // Creates the illusion of a convex lens, thicker in middle
-                    float depth = smoothstep(0.0, -radius * 1.5, dist); // Assuming radius approx max depth
-                    
-                    // 2. Optical Refraction
-                    // Bend UVs based on normal, depth, and the IOR slider
-                    float refractionStrength = (u_ior - 1.0);
-                    vec2 refractionOffset = normal2D * depth * refractionStrength;
+                    // --- OPTICAL REFRACTION ---
+                    float depth = smoothstep(0.0, -0.15, dist);
+                    vec2 refractionOffset = normal2D * depth * 0.08;
                     vec2 refractedUV = uv - refractionOffset;
                     
-                    // 3. Chromatic Aberration (Dispersion)
-                    // Sample the background 3 times with slight offsets
-                    float disp = u_chroma * depth;
-                    float r = renderBackground(refractedUV + normal2D * disp).r;
+                    // --- CHROMATIC ABERRATION ---
+                    float dispersion = 0.008 * depth;
+                    float r = renderBackground(refractedUV + normal2D * dispersion).r;
                     float g = renderBackground(refractedUV).g;
-                    float b = renderBackground(refractedUV - normal2D * disp).b;
+                    float b = renderBackground(refractedUV - normal2D * dispersion).b;
                     vec3 glassColor = vec3(r, g, b);
 
-                    // 4. Fake 3D Lighting Reconstruction
-                    // Build a 3D normal from the 2D gradient and the calculated depth
-                    vec3 normal3D = normalize(vec3(normal2D.x, normal2D.y, depth * 2.5 + 0.1));
+                    // --- LIGHTING & SHADING ---
+                    vec3 normal3D = normalize(vec3(normal2D.x, normal2D.y, depth * 3.0));
                     vec3 viewDir = vec3(0.0, 0.0, 1.0);
-                    vec3 lightDir = normalize(vec3(0.0, -1.0, 0.8)); // Light from top-front
+                    vec3 lightDir = normalize(vec3(0.0, -1.0, 0.8)); 
                     
-                    // 5. Interior Shadows & Volumetric Darkening
-                    // Edges get darker due to total internal reflection loss
-                    float edgeShadow = smoothstep(0.0, -0.05, dist);
-                    glassColor = mix(glassColor * 0.5, glassColor, edgeShadow);
+                    // Interior Shadow
+                    float edgeShadow = smoothstep(0.0, -0.04, dist);
+                    glassColor = mix(glassColor * 0.65, glassColor, edgeShadow);
 
-                    // 6. Specular Highlights (The bright curve at the top)
+                    // Specular Highlight
                     vec3 halfVec = normalize(lightDir + viewDir);
-                    float NdotH = max(dot(normal3D, halfVec), 0.0);
-                    float specular = pow(NdotH, 80.0) * 1.2;
+                    float specular = pow(max(dot(normal3D, halfVec), 0.0), 60.0) * 0.8;
 
-                    // 7. Fresnel Edge Glow (Subtle rim light around the capsule)
-                    float fresnel = pow(1.0 - max(dot(normal3D, viewDir), 0.0), 4.0);
-                    vec3 edgeGlow = vec3(1.0) * fresnel * 0.4;
+                    // Fresnel Edge Glow
+                    float fresnel = pow(1.0 - max(dot(normal3D, viewDir), 0.0), 3.0);
+                    vec3 edgeGlow = vec3(1.0) * fresnel * 0.3;
 
-                    // 8. Hard Outer Rim Stroke
+                    // White Rim Stroke
                     float rimStroke = smoothstep(-0.002, 0.0, dist) - smoothstep(0.0, 0.002, dist);
 
-                    // Combine Optical Layers
                     vec3 opticalResult = glassColor + specular + edgeGlow + (vec3(1.0) * rimStroke * 0.8);
                     
-                    // Alpha Composite with Background for smooth edges
                     vec3 rawBg = renderBackground(uv);
                     finalColor = mix(rawBg, opticalResult, aa);
 
                 } else {
-                    // Strictly outside the glass
                     finalColor = renderBackground(uv);
-                }
-
-                // --- POST PROCESSING ---
-                
-                // 1. Cinematic Vignette
-                vec2 centerUV = uv - 0.5;
-                float vignette = 1.0 - dot(centerUV, centerUV) * 0.8;
-                finalColor *= smoothstep(0.0, 1.0, vignette);
-
-                // 2. Cinematic Film Grain
-                if (u_useGrain > 0.5) {
-                    float noise = hash12(uv * u_time) * 2.0 - 1.0; // -1 to 1
-                    finalColor += noise * 0.015; // subtle blend
                 }
 
                 outColor = vec4(finalColor, 1.0);
             }
         `;
 
-        // Shader Compilation Logic
-        function compileShader(gl, type, source) {
+        // ============================================================================
+        // WEBGL ENGINE BOILERPLATE
+        // ============================================================================
+        function createShader(gl, type, source) {
             const shader = gl.createShader(type);
             gl.shaderSource(shader, source);
             gl.compileShader(shader);
             if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
+                console.error('Shader error:', gl.getShaderInfoLog(shader));
                 gl.deleteShader(shader);
                 return null;
             }
             return shader;
         }
 
-        const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vsSource);
-        const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
 
         const program = gl.createProgram();
         gl.attachShader(program, vertexShader);
         gl.attachShader(program, fragmentShader);
         gl.linkProgram(program);
 
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            console.error('Program linking error:', gl.getProgramInfoLog(program));
-        }
-
-        // Fullscreen Quad Geometry
         const positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        const positions = [
-            -1.0, -1.0,   1.0, -1.0,  -1.0,  1.0,
-            -1.0,  1.0,   1.0, -1.0,   1.0,  1.0,
-        ];
+        const positions = [-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
         const vao = gl.createVertexArray();
@@ -860,23 +351,15 @@
         gl.enableVertexAttribArray(posLoc);
         gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-        // Map Uniforms
-        const locs = {
-            res: gl.getUniformLocation(program, "u_resolution"),
-            mouse: gl.getUniformLocation(program, "u_mouse"),
-            vel: gl.getUniformLocation(program, "u_velocity"),
-            time: gl.getUniformLocation(program, "u_time"),
-            colorTop: gl.getUniformLocation(program, "u_colorTop"),
-            colorBot: gl.getUniformLocation(program, "u_colorBot"),
-            ior: gl.getUniformLocation(program, "u_ior"),
-            chroma: gl.getUniformLocation(program, "u_chroma"),
-            thick: gl.getUniformLocation(program, "u_thickness"),
-            grain: gl.getUniformLocation(program, "u_useGrain"),
-            deform: gl.getUniformLocation(program, "u_useDeform")
-        };
+        // Uniforms
+        const uRes = gl.getUniformLocation(program, "u_resolution");
+        const uMouse = gl.getUniformLocation(program, "u_mouse");
+        const uVel = gl.getUniformLocation(program, "u_velocity");
+        const uColTop = gl.getUniformLocation(program, "u_colorTop");
+        const uColBot = gl.getUniformLocation(program, "u_colorBot");
 
         // ============================================================================
-        // 4. PHYSICS & EVENT LOOP
+        // INTERACTION & PHYSICS LOOP
         // ============================================================================
         let mouseX = window.innerWidth / 2;
         let mouseY = window.innerHeight / 2;
@@ -885,98 +368,59 @@
         let velX = 0;
         let velY = 0;
 
-        window.addEventListener('mousemove', (e) => {
-            targetX = e.clientX;
-            targetY = e.clientY;
-        });
+        window.addEventListener('mousemove', (e) => { targetX = e.clientX; targetY = e.clientY; });
+        window.addEventListener('touchmove', (e) => { targetX = e.touches[0].clientX; targetY = e.touches[0].clientY; }, { passive: true });
 
-        window.addEventListener('touchmove', (e) => {
-            targetX = e.touches[0].clientX;
-            targetY = e.touches[0].clientY;
-        }, { passive: true });
-
-        // Handle Resizing
         function resizeCanvas() {
-            const dpr = Math.min(window.devicePixelRatio, 2); // Cap at 2x for stable FPS
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            
-            if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
-                canvas.width = width * dpr;
-                canvas.height = height * dpr;
+            const dpr = Math.min(window.devicePixelRatio, 2);
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+                canvas.width = w * dpr;
+                canvas.height = h * dpr;
                 gl.viewport(0, 0, canvas.width, canvas.height);
-                document.getElementById('res-counter').innerHTML = `${width}x${height}<span>PX</span>`;
             }
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
 
-        // Color Lerp Helper
-        function lerpColor(curr, target, amt) {
-            curr[0] += (target[0] - curr[0]) * amt;
-            curr[1] += (target[1] - curr[1]) * amt;
-            curr[2] += (target[2] - curr[2]) * amt;
+        // Linear interpolation function for smooth color transitions
+        function lerpColor(curr, target, factor) {
+            curr[0] += (target[0] - curr[0]) * factor;
+            curr[1] += (target[1] - curr[1]) * factor;
+            curr[2] += (target[2] - curr[2]) * factor;
         }
 
-        // FPS Logic
-        let lastTime = performance.now();
-        let frames = 0;
-        const fpsCounter = document.getElementById('fps-counter');
+        function render() {
+            resizeCanvas();
 
-        // Main Draw Loop
-        function render(now) {
-            // Calculate FPS
-            frames++;
-            if (now > lastTime + 1000) {
-                fpsCounter.innerHTML = `${frames}<span>FPS</span>`;
-                frames = 0;
-                lastTime = now;
-            }
+            // Smooth Color Transitions
+            lerpColor(currentColorTop, targetColorTop, 0.08);
+            lerpColor(currentColorBot, targetColorBot, 0.08);
 
-            // Update Color Interpolation (Smooth transition between the 20 gradients)
-            lerpColor(currentColorTop, targetColorTop, 0.05);
-            lerpColor(currentColorBot, targetColorBot, 0.05);
-
-            // Update Fluid Physics (Spring drag based on slider)
+            // Spring Physics for Mouse & Glass velocity
             const dx = targetX - mouseX;
             const dy = targetY - mouseY;
-            
-            // Apply viscosity slider to the spring math
-            velX = dx * settings.drag;
-            velY = dy * settings.drag;
-            
+            velX = dx * 0.15;
+            velY = dy * 0.15;
             mouseX += velX;
             mouseY += velY;
 
-            // Render WebGL
             gl.useProgram(program);
             gl.bindVertexArray(vao);
 
-            // Pass Data to GPU
-            gl.uniform2f(locs.res, canvas.width, canvas.height);
-            // Scale mouse to high-DPI coordinates
+            gl.uniform2f(uRes, canvas.width, canvas.height);
+            
             const dpr = Math.min(window.devicePixelRatio, 2);
-            gl.uniform2f(locs.mouse, mouseX * dpr, mouseY * dpr);
-            // Normalize velocity for the shader
-            gl.uniform2f(locs.vel, velX / window.innerWidth, velY / window.innerHeight);
-            gl.uniform1f(locs.time, now * 0.001);
+            gl.uniform2f(uMouse, mouseX * dpr, mouseY * dpr);
+            gl.uniform2f(uVel, velX / window.innerWidth, velY / window.innerHeight);
             
-            gl.uniform3fv(locs.colorTop, currentColorTop);
-            gl.uniform3fv(locs.colorBot, currentColorBot);
-            
-            gl.uniform1f(locs.ior, settings.ior);
-            gl.uniform1f(locs.chroma, settings.chroma);
-            gl.uniform1f(locs.thick, settings.thickness);
-            gl.uniform1f(locs.grain, settings.grain);
-            gl.uniform1f(locs.deform, settings.deform);
+            gl.uniform3fv(uColTop, currentColorTop);
+            gl.uniform3fv(uColBot, currentColorBot);
 
             gl.drawArrays(gl.TRIANGLES, 0, 6);
-
             requestAnimationFrame(render);
         }
 
         requestAnimationFrame(render);
-
     </script>
 </body>
 </html>
